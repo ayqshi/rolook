@@ -1,0 +1,1304 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Roblox Sign Up & Log In</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #111214;
+            color: white;
+            margin: 0;
+            padding: 0;
+            overflow-x: hidden;
+        }
+
+        /* Background Image Setup */
+        .bg-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: url('RB.png'); /* Updated background image */
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            z-index: -2;
+        }
+
+        /* Dark overlay to make the form pop - Added subtle radial glow */
+        .bg-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle at center, rgba(17, 18, 20, 0.3) 0%, rgba(17, 18, 20, 0.85) 100%);
+            z-index: -1;
+        }
+        
+        /* Contrast Underlay Glow for Forms */
+        .glow-underlay {
+            position: absolute;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            width: 100%; max-width: 500px;
+            height: 70vh;
+            background: rgba(17, 18, 20, 0.6);
+            filter: blur(40px);
+            z-index: 0;
+            pointer-events: none;
+            border-radius: 50%;
+        }
+
+        /* Custom Input Styles */
+        .roblox-input {
+            background-color: #111214;
+            border: 1px solid #666;
+            color: white;
+            transition: border-color 0.2s;
+        }
+        .roblox-input:focus {
+            outline: none;
+            border-color: white;
+        }
+
+        /* Gender Toggle Buttons */
+        .gender-btn.selected {
+            background-color: #393b3d;
+            border-color: white;
+        }
+
+        /* Hide default scrollbar for select but keep functionality */
+        select {
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            appearance: none;
+            background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+            background-repeat: no-repeat;
+            background-position: right 0.5rem center;
+            background-size: 1em;
+            padding-right: 2rem !important;
+        }
+
+        /* Home Page Scrollbar Hiding */
+        .hide-scrollbar::-webkit-scrollbar { display: none; }
+        .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+        /* Mobile App Specific Styles */
+        .bottom-nav-item.active {
+            color: white;
+        }
+        .bottom-nav-item {
+            color: #9CA3AF;
+        }
+        
+        /* Modal Overlay */
+        .modal-overlay {
+            background-color: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(2px);
+        }
+        
+        /* Custom Date Input Icon Hiding for Webkit */
+        input[type="date"]::-webkit-calendar-picker-indicator {
+            filter: invert(1);
+            opacity: 0.5;
+            cursor: pointer;
+        }
+        
+        /* Hide native browser password reveal icon (the second black eye) */
+        input[type="password"]::-ms-reveal,
+        input[type="password"]::-ms-clear,
+        input[type="password"]::-webkit-reveal {
+            display: none !important;
+        }
+
+        /* Skeleton Loading Animation */
+        .skeleton {
+            background: #232527;
+            background-image: linear-gradient(90deg, #232527 0px, #33363a 40px, #232527 80px);
+            background-size: 200% 100%;
+            animation: shimmer 1.5s infinite;
+            border-radius: 4px;
+        }
+        @keyframes shimmer {
+            0% { background-position: 100% 0; }
+            100% { background-position: -100% 0; }
+        }
+
+        /* Sidebar Transition */
+        #sidebar {
+            transition: transform 0.3s ease-in-out;
+        }
+        .sidebar-open {
+            transform: translateX(0) !important;
+        }
+
+        /* In-Game UI slider custom styling */
+        input[type=range].roblox-slider {
+            -webkit-appearance: none;
+            width: 100%;
+            background: transparent;
+        }
+        input[type=range].roblox-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 24px;
+            width: 24px;
+            border-radius: 50%;
+            background: #ffffff;
+            cursor: pointer;
+            margin-top: -10px;
+        }
+        input[type=range].roblox-slider::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 4px;
+            cursor: pointer;
+            background: #4a4d52;
+            border-radius: 2px;
+        }
+    </style>
+    
+    <!-- Three.js for 3D Engine & Avatar Rendering -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+
+    <!-- Development tools and browser controls remain available; this is a client-side prototype. -->
+</head>
+<body class="antialiased min-h-screen flex flex-col items-center bg-[#111214] text-white overflow-x-hidden">
+
+    <!-- ================= LAUNCH SCREEN ================= -->
+    <div id="launchScreen" class="fixed inset-0 bg-white z-[100] flex items-center justify-center transition-opacity duration-700 ease-in-out">
+        <img src="launch.png" class="w-full h-full object-cover" alt="Launch Screen" onerror="this.src='https://placehold.co/1080x1920/111214/fff?text=Roblox+Launch'">
+    </div>
+
+    <!-- ================= SIDEBAR MENU (Drawer) ================= -->
+    <div id="sidebarOverlay" class="fixed inset-0 bg-black/60 z-[190] hidden opacity-0 transition-opacity duration-300" onclick="toggleSidebar()"></div>
+    <div id="sidebar" class="-translate-x-full fixed inset-y-0 left-0 w-[75%] max-w-[320px] bg-[#111214] z-[200] overflow-y-auto flex flex-col shadow-2xl">
+        <div class="p-5 flex items-center gap-3 border-b border-gray-800">
+            <div class="w-14 h-14 rounded-full overflow-hidden bg-gray-800">
+                 <img src="https://placehold.co/100x100/222/fff?text=U" id="sidebarAvatar" alt="Avatar" class="w-full h-full object-cover">
+            </div>
+            <div>
+                <h2 id="sidebarUsername" class="text-[19px] font-bold flex items-center gap-1">User <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 22 8.5 22 15.5 12 22 2 15.5 2 8.5 12 2"></polygon></svg></h2>
+                <p id="sidebarHandle" class="text-[14px] text-gray-400">@user</p>
+            </div>
+            <div class="ml-auto text-gray-400"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg></div>
+        </div>
+        <div class="flex-grow py-2 flex flex-col text-[16px] font-bold text-gray-200">
+            <a href="#" class="px-5 py-3 flex items-center gap-4 hover:bg-white/5"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg> Friends</a>
+            <a href="#" class="px-5 py-3 flex items-center gap-4 hover:bg-white/5"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><rect x="18" y="4" width="4" height="4"></rect><rect x="18" y="10" width="4" height="4"></rect></svg> Communities</a>
+            <a href="#" class="px-5 py-3 flex items-center gap-4 hover:bg-white/5"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 7H4a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2z"></path><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path></svg> Inventory</a>
+            <a href="#" class="px-5 py-3 flex items-center gap-4 hover:bg-white/5"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path></svg> Trades</a>
+            <a href="#" class="px-5 py-3 flex items-center gap-4 hover:bg-white/5"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"></path><polyline points="16 6 12 2 8 6"></polyline><line x1="12" y1="2" x2="12" y2="15"></line></svg> Messages</a>
+            <a href="#" class="px-5 py-3 flex items-center gap-4 hover:bg-white/5"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 22 8.5 22 15.5 12 22 2 15.5 2 8.5 12 2"></polygon></svg> Roblox Plus</a>
+            <a href="#" class="px-5 py-3 flex items-center gap-4 hover:bg-white/5"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="20" height="16" rx="2" ry="2"></rect><line x1="2" y1="10" x2="22" y2="10"></line></svg> Buy Gift Cards</a>
+            <a href="#" class="px-5 py-3 flex items-center gap-4 hover:bg-white/5"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg> Redeem Codes</a>
+            <a href="#" class="px-5 py-3 flex items-center gap-4 hover:bg-white/5"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg> Settings</a>
+            <a href="#" class="px-5 py-3 flex items-center gap-4 hover:bg-white/5"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg> Help & Safety</a>
+            
+            <div class="h-px bg-gray-800 my-2 mx-5"></div>
+            
+            <a href="#" class="px-5 py-3 flex items-center gap-4 hover:bg-white/5"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path></svg> Learn</a>
+            <a href="#" class="px-5 py-3 flex items-center gap-4 hover:bg-white/5"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 22 8.5 22 15.5 12 22 2 15.5 2 8.5 12 2"></polygon></svg> Create</a>
+            
+            <div class="mt-4 px-4 flex flex-col gap-3 pb-8">
+                <button class="bg-[#2a2c30] text-white py-3 rounded-lg font-bold w-full">Switch Accounts</button>
+                <button onclick="openModal('quickSignInModal')" class="bg-[#2a2c30] text-white py-3 rounded-lg font-bold w-full">Quick Sign-in</button>
+                <button onclick="handleLogout()" class="bg-[#2a2c30] text-white py-3 rounded-lg font-bold w-full">Log Out</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ================= MAIN APP CONTAINER (SPA) ================= -->
+    <div id="mainApp" class="hidden w-full min-h-screen relative flex-col pb-16">
+        
+        <!-- View: HOME PAGE -->
+        <div id="view-home" class="spa-view w-full min-h-screen bg-[#111214] absolute inset-0 overflow-y-auto hidden flex-col pb-20">
+            <!-- Top App Bar -->
+            <header class="flex items-center justify-between px-4 pt-12 pb-3 bg-[#111214] sticky top-0 z-20">
+                <div class="flex items-center gap-4">
+                    <div class="relative cursor-pointer" onclick="toggleSidebar()">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+                        <div class="absolute -top-1 -right-1 w-2.5 h-2.5 bg-blue-500 rounded-full border-2 border-[#111214]"></div>
+                    </div>
+                    <img src="LOGO.png" alt="Roblox" class="h-5 object-contain">
+                </div>
+                <div class="flex items-center gap-5 text-white">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 22 8.5 22 15.5 12 22 2 15.5 2 8.5 12 2"></polygon><circle cx="12" cy="12" r="3"></circle></svg>
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" onclick="navTo('view-notifications')"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>
+                </div>
+            </header>
+
+            <div class="flex border-b border-gray-800 bg-[#111214] sticky top-[72px] z-20">
+                <button class="flex-1 py-3 text-center font-semibold text-white border-b-2 border-white">For you</button>
+                <button class="flex-1 py-3 text-center font-semibold text-gray-400">Charts</button>
+            </div>
+
+            <div class="px-4 py-5 flex-grow">
+                <div class="flex items-center gap-3 mb-6">
+                    <div class="w-10 h-10 rounded-full overflow-hidden bg-gray-800">
+                         <img src="https://placehold.co/100x100/222/fff?text=U" id="homeAvatar" alt="Avatar" class="w-full h-full object-cover">
+                    </div>
+                    <h2 id="homeUsername" class="text-xl font-bold flex items-center gap-1">User</h2>
+                </div>
+
+                <!-- Friends List (Dynamic Skeletons) -->
+                <div id="friendsContainer" class="flex gap-4 overflow-x-auto hide-scrollbar mb-8 pb-2">
+                    <!-- Skeletons injected by JS -->
+                </div>
+
+                <!-- Recommended Games (Dynamic Skeletons) -->
+                <div>
+                    <h3 class="text-xl font-bold mb-4">Recommended For You</h3>
+                    <div id="gamesContainer" class="grid grid-cols-2 gap-4">
+                        <!-- Skeletons injected by JS -->
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- View: GAME DETAILS -->
+        <div id="view-game" class="spa-view w-full min-h-screen bg-[#111214] absolute inset-0 hidden flex-col z-40">
+            <!-- Game Details Header -->
+            <div class="relative w-full aspect-video bg-gray-900">
+                <img id="gameDetailImg" src="" class="w-full h-full object-cover opacity-70">
+                <div class="absolute inset-0 bg-gradient-to-t from-[#111214] to-transparent"></div>
+                <button onclick="navTo('view-home')" class="absolute top-12 left-4 w-10 h-10 bg-black/50 rounded-full flex items-center justify-center backdrop-blur-sm">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+                </button>
+            </div>
+            <div class="px-4 -mt-10 relative z-10 flex gap-4">
+                <img id="gameDetailIcon" src="" class="w-24 h-24 rounded-2xl shadow-xl border-2 border-[#111214] bg-gray-800 object-cover">
+                <div class="pt-12">
+                    <h1 id="gameDetailTitle" class="text-2xl font-bold">Game Title</h1>
+                    <p class="text-sm text-gray-400">By Developer <svg class="inline w-3 h-3 text-blue-500" viewBox="0 0 24 24" fill="currentColor"><polygon points="12 2 22 8.5 22 15.5 12 22 2 15.5 2 8.5 12 2"></polygon><polyline points="8 12 11 15 16 9" stroke="white" stroke-width="2"></polyline></svg></p>
+                </div>
+            </div>
+            
+            <div class="px-4 mt-6">
+                <div class="flex gap-2 mb-6">
+                    <div class="bg-[#2a2c30] px-3 py-1.5 rounded-md text-xs font-semibold flex items-center gap-1"><svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"></path></svg> 90%</div>
+                    <div class="bg-[#2a2c30] px-3 py-1.5 rounded-md text-xs font-semibold flex items-center gap-1"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle></svg> 283K active</div>
+                </div>
+                <p class="text-sm text-gray-300 leading-relaxed mb-6">Welcome to the game! Can you solve the mystery and survive the round? Collect coins, trade weapons, and climb the leaderboards!</p>
+            </div>
+
+            <!-- Fixed Bottom Play Bar -->
+            <div class="fixed bottom-0 left-0 w-full p-4 bg-[#111214] border-t border-gray-800 flex gap-3 z-50">
+                <button class="w-14 h-14 rounded-full border border-gray-600 flex items-center justify-center text-white"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="1"></circle><circle cx="19" cy="12" r="1"></circle><circle cx="5" cy="12" r="1"></circle></svg></button>
+                <button class="w-14 h-14 rounded-full border border-gray-600 flex items-center justify-center text-white"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="8.5" cy="7" r="4"></circle><line x1="20" y1="8" x2="20" y2="14"></line><line x1="23" y1="11" x2="17" y2="11"></line></svg></button>
+                <button onclick="launchGame()" class="flex-grow bg-blue-600 hover:bg-blue-500 rounded-full flex items-center justify-center"><svg width="32" height="32" viewBox="0 0 24 24" fill="white"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg></button>
+            </div>
+        </div>
+
+        <!-- View: CHAT -->
+        <div id="view-chat" class="spa-view w-full min-h-screen bg-[#111214] absolute inset-0 hidden flex-col pb-20">
+            <header class="flex items-center justify-between px-4 pt-12 pb-4 bg-[#111214] sticky top-0 z-20 border-b border-gray-800">
+                <div class="flex items-center gap-4">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" onclick="toggleSidebar()"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+                    <h1 class="text-2xl font-bold">Chat</h1>
+                </div>
+                <div class="flex gap-4">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+                </div>
+            </header>
+            <div class="flex-grow overflow-y-auto">
+                <div class="p-4 border-b border-gray-800 flex items-center justify-between">
+                    <div class="flex items-center gap-4">
+                        <div class="w-12 h-12 rounded-full bg-gray-800 flex items-center justify-center"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><polygon points="16 11 18 13 22 9"></polygon></svg></div>
+                        <div>
+                            <h3 class="font-bold text-[17px]">Start party</h3>
+                            <p class="text-[13px] text-gray-400">Join experiences together</p>
+                        </div>
+                    </div>
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="gray" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                </div>
+                <!-- Chat List Items injected via JS -->
+                <div id="chatListContainer"></div>
+            </div>
+        </div>
+
+        <!-- View: ME (Avatar Customization) -->
+        <div id="view-me" class="spa-view w-full min-h-screen bg-[#1a1c1e] absolute inset-0 hidden flex-col pb-20 overflow-hidden">
+            <header class="flex items-center justify-between px-4 pt-12 pb-4 z-20">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" onclick="toggleSidebar()"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+                <div class="flex bg-black/40 rounded-full overflow-hidden p-1 backdrop-blur-md">
+                    <button class="px-4 py-1.5 rounded-full bg-gray-700/60 text-sm font-semibold">Marketplace</button>
+                    <button class="px-4 py-1.5 rounded-full text-sm font-semibold text-gray-300">Customize</button>
+                </div>
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+            </header>
+            
+            <div class="relative w-full h-[50vh] flex items-center justify-center -mt-10">
+                <!-- Fallback image for Me view (3D rendered dynamically) -->
+                <div id="meAvatarContainer" class="w-full h-full absolute inset-0"></div>
+                
+                <div class="absolute top-20 right-4 bg-black/50 backdrop-blur-md px-3 py-1.5 rounded-full flex items-center gap-1.5 font-bold z-10">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="white"><polygon points="12 2 22 8.5 22 15.5 12 22 2 15.5 2 8.5 12 2"></polygon><circle cx="12" cy="12" r="3" fill="#111214"></circle></svg>
+                    0
+                </div>
+                <div class="absolute bottom-10 left-4 bg-black/50 backdrop-blur-md p-2 rounded-full flex gap-3 z-10">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><polyline points="9 14 4 9 9 4"></polyline><path d="M20 20v-7a4 4 0 0 0-4-4H4"></path></svg>
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="gray" stroke-width="2"><polyline points="15 14 20 9 15 4"></polyline><path d="M4 20v-7a4 4 0 0 1 4-4h12"></path></svg>
+                </div>
+            </div>
+            
+            <div class="bg-[#111214] rounded-t-3xl flex-grow shadow-[0_-10px_40px_rgba(0,0,0,0.5)] z-10 p-5 flex flex-col">
+                <div class="w-12 h-1 bg-gray-600 rounded-full mx-auto mb-4"></div>
+                <div class="flex gap-4 border-b border-gray-800 pb-2 mb-4 font-bold text-gray-400 overflow-x-auto hide-scrollbar">
+                    <button class="text-white border-b-2 border-white pb-2 flex-shrink-0">Clothing</button>
+                    <button class="hover:text-white transition-colors flex-shrink-0">Characters</button>
+                    <button class="hover:text-white transition-colors flex-shrink-0">Accessories</button>
+                    <button class="hover:text-white transition-colors flex-shrink-0">Animations</button>
+                </div>
+                
+                <!-- Marketplace Items Grid -->
+                <div class="grid grid-cols-4 gap-3 overflow-y-auto pb-10 flex-grow">
+                    <button onclick="equipItem('shirt', 0xff0000)" class="aspect-square bg-[#2a2c30] rounded-xl flex items-center justify-center border border-transparent hover:border-white transition-colors"><div class="w-8 h-8 bg-red-500 rounded shadow-md"></div></button>
+                    <button onclick="equipItem('shirt', 0x00ff00)" class="aspect-square bg-[#2a2c30] rounded-xl flex items-center justify-center border border-transparent hover:border-white transition-colors"><div class="w-8 h-8 bg-green-500 rounded shadow-md"></div></button>
+                    <button onclick="equipItem('shirt', 0x0000ff)" class="aspect-square bg-[#2a2c30] rounded-xl flex items-center justify-center border border-transparent hover:border-white transition-colors"><div class="w-8 h-8 bg-blue-500 rounded shadow-md"></div></button>
+                    <button onclick="equipItem('shirt', 0x111111)" class="aspect-square bg-[#2a2c30] rounded-xl flex items-center justify-center border border-transparent hover:border-white transition-colors"><div class="w-8 h-8 bg-gray-900 rounded shadow-md"></div></button>
+                    <button onclick="equipItem('shirt', 0xffffff)" class="aspect-square bg-[#2a2c30] rounded-xl flex items-center justify-center border border-transparent hover:border-white transition-colors"><div class="w-8 h-8 bg-white rounded shadow-md border border-gray-500"></div></button>
+                    <button onclick="equipItem('shirt', 0xffaa00)" class="aspect-square bg-[#2a2c30] rounded-xl flex items-center justify-center border border-transparent hover:border-white transition-colors"><div class="w-8 h-8 bg-yellow-500 rounded shadow-md"></div></button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Bottom Navigation Bar (Persistent across main SPA views) -->
+        <nav id="bottomNav" class="fixed bottom-0 w-full bg-[#111214] border-t border-gray-800 flex justify-around items-center py-2 pb-6 z-30 transition-transform duration-300">
+            <button onclick="navTo('view-home')" class="nav-btn bottom-nav-item active flex flex-col items-center gap-1" data-target="view-home">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
+                <span class="text-[10px] font-medium">Home</span>
+            </button>
+            <button class="nav-btn bottom-nav-item flex flex-col items-center gap-1">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
+                <span class="text-[10px] font-medium">Moments</span>
+            </button>
+            <button onclick="navTo('view-chat')" class="nav-btn bottom-nav-item flex flex-col items-center gap-1" data-target="view-chat">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+                <span class="text-[10px] font-medium">Chat</span>
+            </button>
+            <button onclick="navTo('view-me')" class="nav-btn bottom-nav-item flex flex-col items-center gap-1" data-target="view-me">
+                <div class="w-6 h-6 rounded-full bg-gray-600 flex items-center justify-center overflow-hidden border border-gray-400">
+                    <img src="https://placehold.co/50x50/222/fff?text=U" id="navAvatar" class="w-full h-full object-cover">
+                </div>
+                <span class="text-[10px] font-medium">Me</span>
+            </button>
+        </nav>
+    </div>
+
+    <!-- ================= 3D GAME ENGINE & UI OVERLAYS ================= -->
+    
+    <!-- Rebuilt responsive Roblox-style client shell -->
+    <div id="upgradeApp" class="hidden">
+      <aside class="rbx-sidebar">
+        <div class="rbx-brand"><span class="rbx-diamond">◇</span><b>ROBLOX</b></div>
+        <div class="rbx-account"><img id="rbxSideAvatar" src="" alt=""><div><b id="rbxSideName">Player</b><small id="rbxSideHandle">@player</small></div><button aria-label="Account menu" onclick="rbxNavigate('settings')">•••</button></div>
+        <nav id="rbxSideNav" class="rbx-nav">
+          <button data-page="home" onclick="rbxNavigate('home')">⌂ <span>Home</span></button>
+          <button data-page="discover" onclick="rbxNavigate('discover')">▦ <span>Discover</span></button>
+          <button data-page="friends" onclick="rbxNavigate('friends')">♧ <span>Friends</span></button>
+          <button data-page="messages" onclick="rbxNavigate('messages')">▤ <span>Messages</span></button>
+          <button data-page="groups" onclick="rbxNavigate('groups')">▥ <span>Communities</span></button>
+          <button data-page="profile" onclick="rbxNavigate('profile')">◉ <span>Profile</span></button>
+          <button data-page="badges" onclick="rbxNavigate('badges')">✧ <span>Badges</span></button>
+          <button data-page="settings" onclick="rbxNavigate('settings')">⚙ <span>Settings</span></button>
+        </nav>
+        <div class="rbx-sidebar-foot"><span>Public profile explorer</span><small>Unofficial client · no Roblox affiliation</small></div>
+      </aside>
+      <main class="rbx-main">
+        <header class="rbx-topbar"><button class="rbx-mobile-menu" onclick="document.getElementById('upgradeApp').classList.toggle('nav-open')">☰</button><div class="rbx-toplinks"><button onclick="rbxNavigate('home')">Home</button><button onclick="rbxNavigate('discover')">Discover</button><button onclick="rbxNavigate('groups')">Communities</button></div><form class="rbx-search" onsubmit="event.preventDefault();rbxSearch(document.getElementById('rbxGlobalSearch').value)"><span>⌕</span><input id="rbxGlobalSearch" placeholder="Search people and experiences" autocomplete="off"><kbd>ENTER</kbd></form><div class="rbx-top-actions"><button onclick="rbxNavigate('friends')" title="Friends">♧</button><button onclick="rbxNavigate('messages')" title="Messages">▤</button><button onclick="rbxNavigate('profile')"><img id="rbxTopAvatar" src="" alt="Profile"></button></div></header>
+        <div id="rbxContent" class="rbx-content"><section class="rbx-page"><h1>Welcome</h1><p>Loading your public Roblox profile…</p></section></div>
+      </main>
+      <nav class="rbx-mobile-nav"><button onclick="rbxNavigate('home')">⌂<small>Home</small></button><button onclick="rbxNavigate('discover')">▦<small>Discover</small></button><button onclick="rbxNavigate('friends')">♧<small>Friends</small></button><button onclick="rbxNavigate('profile')">◉<small>Profile</small></button></nav>
+    </div>
+
+    <!-- Game Loading Screen -->
+    <div id="gameLoadingScreen" class="fixed inset-0 bg-[#1a1b1e] z-[300] hidden flex-col items-center justify-center">
+        <img id="loadingGameIcon" src="" class="w-24 h-24 rounded-2xl shadow-2xl mb-4 object-cover">
+        <h2 id="loadingGameTitle" class="text-xl font-bold mb-2">Game Title</h2>
+        <p class="text-sm text-gray-400 flex items-center gap-1">Developer <svg class="w-3 h-3 text-blue-500" viewBox="0 0 24 24" fill="currentColor"><polygon points="12 2 22 8.5 22 15.5 12 22 2 15.5 2 8.5 12 2"></polygon><polyline points="8 12 11 15 16 9" stroke="white" stroke-width="2"></polyline></svg></p>
+        <p class="absolute bottom-10 text-xs text-gray-500 animate-pulse">Waiting for an available server...</p>
+    </div>
+
+    <!-- 3D Canvas Container -->
+    <div id="game3DContainer" class="fixed inset-0 z-[250] hidden bg-[#87CEEB]">
+        <!-- Three.js renders here -->
+    </div>
+
+    <!-- In-Game UI Overlay -->
+    <div id="inGameUI" class="fixed inset-0 z-[260] hidden pointer-events-none">
+        <!-- Top Left Roblox Icon -->
+        <button onclick="toggleInGameMenu()" class="pointer-events-auto absolute top-4 left-4 w-10 h-10 bg-black/40 rounded-full flex items-center justify-center backdrop-blur-sm border border-white/10 hover:bg-black/60 transition-colors">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="white"><polygon points="12 2 22 8.5 22 15.5 12 22 2 15.5 2 8.5 12 2"></polygon><rect x="10" y="10" width="4" height="4" fill="#111214"></rect></svg>
+        </button>
+    </div>
+
+    <!-- In-Game Menu Modal (People, Settings) -->
+    <div id="inGameMenu" class="fixed inset-0 z-[270] hidden bg-black/80 backdrop-blur-md flex-col text-white">
+        <header class="flex items-center gap-4 p-4 border-b border-gray-800">
+            <button onclick="toggleInGameMenu()" class="w-10 h-10 bg-white rounded-full flex items-center justify-center text-black">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><polygon points="12 2 22 8.5 22 15.5 12 22 2 15.5 2 8.5 12 2"></polygon><rect x="10" y="10" width="4" height="4" fill="white"></rect></svg>
+            </button>
+            <div class="flex-grow flex justify-around text-[15px] font-semibold text-gray-400">
+                <button onclick="switchGameTab('people')" id="tab-people" class="game-tab py-2 px-4 border-b-2 border-transparent">People</button>
+                <button onclick="switchGameTab('settings')" id="tab-settings" class="game-tab py-2 px-4 border-b-2 border-white text-white">Settings</button>
+                <button class="game-tab py-2 px-4 border-b-2 border-transparent">Gallery</button>
+                <button class="game-tab py-2 px-4 border-b-2 border-transparent">Report</button>
+                <button class="game-tab py-2 px-4 border-b-2 border-transparent">Help</button>
+            </div>
+        </header>
+
+        <div class="flex-grow overflow-y-auto p-4 max-w-4xl mx-auto w-full relative">
+            <!-- Ghosted Logo Background -->
+            <svg class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-64 h-64 text-white/5 pointer-events-none" viewBox="0 0 24 24" fill="currentColor"><polygon points="12 2 22 8.5 22 15.5 12 22 2 15.5 2 8.5 12 2"></polygon></svg>
+            
+            <!-- Settings Tab -->
+            <div id="ingame-settings" class="game-tab-content">
+                <h3 class="text-2xl font-bold mb-6 mt-2">Audio</h3>
+                <div class="flex items-center justify-between mb-8">
+                    <span class="text-[15px]">Volume</span>
+                    <div class="flex items-center gap-4 w-[60%]">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="8" y1="12" x2="16" y2="12"></line></svg>
+                        <input type="range" min="0" max="10" value="7" class="roblox-slider flex-grow">
+                    </div>
+                </div>
+                <div class="flex items-center justify-between mb-10">
+                    <span class="text-[15px]">Output Device</span>
+                    <div class="flex items-center gap-4 w-[60%] justify-between text-sm text-gray-300">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><polyline points="15 18 9 12 15 6"></polyline></svg>
+                        Default (Core Audio output)
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                    </div>
+                </div>
+
+                <h3 class="text-2xl font-bold mb-6">Chat & Language</h3>
+                <div class="flex items-center justify-between mb-8">
+                    <span class="text-[15px]">Voice Chat</span>
+                    <div class="flex items-center justify-end gap-4 w-[60%] text-sm text-gray-300">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><polyline points="15 18 9 12 15 6"></polyline></svg>
+                        Disconnected
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                    </div>
+                </div>
+            </div>
+
+            <!-- People Tab -->
+            <div id="ingame-people" class="game-tab-content hidden flex-col h-full">
+                <div class="flex gap-4 mb-6">
+                    <button onclick="exitGame()" class="flex-1 bg-[#2a2c30] hover:bg-[#3a3d42] py-3 rounded-lg font-bold">Leave</button>
+                    <button class="flex-1 bg-[#2a2c30] hover:bg-[#3a3d42] py-3 rounded-lg font-bold">Respawn</button>
+                    <button onclick="toggleInGameMenu()" class="flex-1 bg-blue-600 hover:bg-blue-500 py-3 rounded-lg font-bold">Resume</button>
+                </div>
+                <div class="bg-[#2a2c30] rounded-lg p-4 mb-6 flex items-center gap-3">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="8.5" cy="7" r="4"></circle><line x1="20" y1="8" x2="20" y2="14"></line><line x1="23" y1="11" x2="17" y2="11"></line></svg>
+                    <span class="font-semibold">Invite Friends</span>
+                </div>
+                
+                <div class="flex justify-between items-center mb-4 mt-2">
+                    <h3 class="text-xl font-bold">In this server</h3>
+                </div>
+                <div class="grid grid-cols-4 gap-4" id="serverPlayersList">
+                    <!-- Players added dynamically via JS -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- ================= AUTH & LANDING FLOW ================= -->
+    <div id="authFlow" class="w-full min-h-screen flex flex-col items-center relative z-[100]">
+        <!-- ... existing code ... (Keep the entire Auth Flow unchanged) ... -->
+        <div class="bg-container"></div>
+        <div class="bg-overlay"></div>
+        <header class="w-full mx-auto p-5 flex absolute top-0 left-0 right-0 z-30 pt-10">
+            <button id="backBtn" onclick="showLanding()" class="hidden text-white font-bold p-2 -ml-2 rounded-sm hover:text-gray-300 transition-colors flex items-center justify-center">
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+            </button>
+        </header>
+
+        <div class="glow-underlay" id="glowUnderlay"></div>
+
+        <main class="w-full flex-grow flex flex-col items-center px-4 relative z-10 min-h-screen">
+            <div id="landingView" class="w-full h-screen flex flex-col items-center justify-between pb-10 pt-20">
+                <div class="flex-1 flex items-center justify-center w-full">
+                    <img src="LOGO.png" alt="Roblox Logo" class="w-4/5 max-w-[400px] object-contain drop-shadow-2xl aspect-[3/1]">
+                </div>
+                <div class="w-full max-w-[420px] flex flex-col gap-3 px-2">
+                    <button onclick="showSignup()" class="w-full bg-white text-black font-bold text-[17px] py-3.5 rounded-md hover:bg-gray-200 transition-colors shadow-lg">Sign Up</button>
+                    <button onclick="showLogin()" class="w-full bg-black/60 backdrop-blur-md border border-gray-400 text-white font-bold text-[17px] py-3.5 rounded-md hover:bg-black/80 hover:border-white transition-colors shadow-lg">Log In</button>
+                </div>
+            </div>
+
+            <!-- Signup Form (Same as before) -->
+            <div id="signupForm" class="hidden fixed inset-0 bg-[#1e2022] z-20 w-full flex flex-col">
+                <div class="flex items-center justify-center p-4 pt-12 border-b border-gray-600 relative bg-[#1e2022]">
+                    <button onclick="showLanding()" class="absolute left-4 p-2 text-white"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
+                    <h1 class="text-xl font-bold text-white tracking-wide">Create Account</h1>
+                </div>
+                <div class="flex-grow overflow-y-auto px-5 py-6">
+                    <form onsubmit="handleSignupSubmit(event)" class="max-w-md mx-auto h-full flex flex-col">
+                        <div class="mb-5"><label class="block text-[13px] text-gray-200 mb-1.5 ml-1">Birthday</label><input type="date" required class="w-full bg-[#111214] border border-transparent text-white rounded-[4px] p-3 text-[15px] focus:outline-none focus:border-gray-500 transition-colors"></div>
+                        <div class="mb-5"><label class="block text-[13px] text-gray-200 mb-1.5 ml-1">Username</label><input type="text" id="signupUsername" placeholder="Don't use your real name" required class="w-full bg-[#111214] border border-transparent text-white rounded-[4px] p-3 text-[15px] placeholder-gray-500 focus:outline-none focus:border-gray-500 transition-colors"></div>
+                        <div class="mb-5">
+                            <label class="block text-[13px] text-gray-200 mb-1.5 ml-1">Password</label>
+                            <div class="relative">
+                                <input type="password" placeholder="At least 8 characters" required minlength="8" id="signupPwd" class="w-full bg-[#111214] border border-transparent text-white rounded-[4px] p-3 pr-10 text-[15px] placeholder-gray-500 focus:outline-none focus:border-gray-500 transition-colors mb-1">
+                                <button type="button" onclick="togglePassword('signupPwd', 'signupEyeIcon')" class="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-white"><svg id="signupEyeIcon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg></button>
+                            </div>
+                            <p id="signupError" class="text-red-500 text-sm hidden mt-1 ml-1">an error has occured, please try again.</p>
+                        </div>
+                        <div class="mb-8"><label class="block text-[13px] text-gray-200 mb-1.5 ml-1">Gender (optional)</label>
+                            <div class="flex gap-0 border border-white rounded-[4px] overflow-hidden bg-transparent">
+                                <button type="button" onclick="selectGender('female')" id="btn-female" class="gender-btn flex-1 py-2.5 flex justify-center items-center border-r border-white hover:bg-white/10 transition-colors"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><circle cx="12" cy="10" r="5"></circle><line x1="12" y1="15" x2="12" y2="22"></line><line x1="9" y1="19" x2="15" y2="19"></line></svg></button>
+                                <button type="button" onclick="selectGender('male')" id="btn-male" class="gender-btn flex-1 py-2.5 flex justify-center items-center hover:bg-white/10 transition-colors"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><circle cx="10" cy="14" r="5"></circle><line x1="13.5" y1="10.5" x2="21" y2="3"></line><polyline points="16 3 21 3 21 8"></polyline></svg></button>
+                            </div>
+                        </div>
+                        <div class="mt-auto">
+                            <button type="submit" class="w-full bg-[#3b5998] text-white font-medium text-[16px] py-3 rounded-[4px] hover:bg-blue-800 transition-colors mb-4">Create Account</button>
+                            <div class="text-center text-[12px] text-gray-300 leading-tight mb-4 px-2">By clicking Create Account, you are agreeing to the Terms of Use including the arbitration clause and you are acknowledging the Privacy Policy.</div>
+                            <div class="flex justify-center gap-6 text-[15px] font-semibold text-[#4e88f7]"><a href="#" class="hover:underline">Terms</a><a href="#" class="hover:underline">Privacy</a></div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Login Form (Same as before) -->
+            <div id="loginForm" class="hidden w-full max-w-[420px] flex-col justify-center min-h-[80vh] mt-10 px-2">
+                <img src="LOGO.png" alt="Roblox Logo" class="w-[85%] mx-auto mb-10 object-contain drop-shadow-2xl">
+                <form onsubmit="handleLoginSubmit(event)" class="flex flex-col gap-3">
+                    <div class="relative"><input type="text" placeholder="Username/Email/Phone" required id="loginIdentifier" class="w-full bg-[#111214] border-none rounded-[4px] p-4 text-[15px] text-white placeholder-gray-500 focus:outline-none ring-1 ring-transparent focus:ring-gray-500 transition-all"></div>
+                    <div>
+                        <div class="relative">
+                            <input type="password" placeholder="Password" required id="loginPwd" class="w-full bg-[#111214] border-none rounded-[4px] p-4 text-[15px] text-white placeholder-gray-500 focus:outline-none ring-1 ring-transparent focus:ring-gray-500 transition-all pr-12">
+                            <button type="button" onclick="togglePassword('loginPwd', 'loginEyeIcon')" class="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-white"><svg id="loginEyeIcon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg></button>
+                        </div>
+                        <p id="loginError" class="text-red-500 text-sm hidden mt-2 ml-1">an error has occured, please try again.</p>
+                    </div>
+                    <button type="submit" id="signInBtn" class="w-full bg-white/70 text-gray-800 font-medium text-[17px] py-3.5 rounded-[4px] mt-2 transition-all">Sign In</button>
+                    <button type="button" onclick="openModal('quickSignInModal')" class="w-full bg-transparent border border-white text-white font-medium text-[17px] py-3.5 rounded-[4px] hover:bg-white/10 transition-colors">Quick Sign-in</button>
+                    <button type="button" onclick="openModal('otherSignInModal')" class="w-full bg-transparent border border-gray-400 text-gray-300 font-medium text-[17px] py-3.5 rounded-[4px] hover:bg-white/10 hover:text-white hover:border-white transition-colors">Other sign-in options</button>
+                    <div class="text-center mt-6 flex flex-col gap-6">
+                        <a href="#" class="text-[13px] text-gray-400 hover:text-white">Forgot Password or Username?</a>
+                        <div class="flex justify-center gap-6 text-[15px] font-semibold text-[#4e88f7]"><a href="#" class="hover:underline">Terms</a><a href="#" class="hover:underline">Privacy</a></div>
+                    </div>
+                </form>
+            </div>
+        </main>
+        
+        <!-- Modals -->
+        <div id="quickSignInModal" class="hidden fixed inset-0 z-50 flex flex-col justify-end modal-overlay">
+            <div class="bg-[#2a2c30] w-full rounded-t-xl animate-[slideUp_0.3s_ease-out]">
+                <div class="flex items-center justify-center p-4 border-b border-gray-600 relative">
+                    <button onclick="closeModal('quickSignInModal')" class="absolute left-4 p-1 text-white"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
+                    <h2 class="text-lg font-bold text-white">Quick Sign-in</h2>
+                </div>
+                <div class="p-8 flex flex-col items-center pb-12">
+                    <h3 class="text-[15px] font-bold mb-4">Option 1</h3>
+                    <div class="bg-white p-2 rounded-md mb-4 shadow-lg"><img id="quickSignInQR" src="" alt="QR Code" class="w-32 h-32"></div>
+                    <p class="text-[13px] text-gray-300 text-center mb-8">Scan this QR code from your logged in device's camera.</p>
+                    <h3 class="text-[15px] font-bold mb-2">Option 2</h3>
+                    <div id="quickSignInCode" class="text-3xl font-bold tracking-wider mb-4">...</div>
+                    <p class="text-[13px] text-gray-300 text-center max-w-[280px]">Open your Roblox app and go to:<br><span class="font-bold text-white">More Page > Quick Sign In</span> to enter your code.</p>
+                </div>
+            </div>
+        </div>
+
+        <div id="otherSignInModal" class="hidden fixed inset-0 z-50 flex items-center justify-center modal-overlay px-6">
+            <div class="bg-[#2a2c30] w-full max-w-[340px] rounded-2xl animate-[fadeIn_0.2s_ease-out] shadow-2xl">
+                <div class="flex items-center justify-between p-5 pb-3">
+                    <h2 class="text-lg font-bold text-white ml-2">Other sign-in options</h2>
+                    <button onclick="closeModal('otherSignInModal')" class="p-1 text-gray-400 hover:text-white"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
+                </div>
+                <div class="p-5 pt-2 flex flex-col gap-3 pb-6">
+                    <button class="w-full flex items-center justify-center gap-3 bg-[#393b3d] hover:bg-[#494c4e] transition-colors py-3.5 rounded-lg text-white font-semibold">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
+                        Google
+                    </button>
+                    <button class="w-full flex items-center justify-center gap-3 bg-[#393b3d] hover:bg-[#494c4e] transition-colors py-3.5 rounded-lg text-white font-semibold">
+                        <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M17.05 20.28c-.98.95-2.05.8-3.08.35-1.09-.46-2.09-.48-3.24 0-1.44.62-2.2.44-3.06-.35C2.79 15.25 3.51 7.59 9.05 7.31c1.35.05 2.25.68 2.74.68.42 0 1.5-.78 3.12-.66 1.48.06 2.66.45 3.4 1.15-2.88 1.5-2.29 5.34 1.14 6.72-1 2.4-1.92 4.41-2.4 5.08zm-5.18-13.6c-.22-2.48 2.15-4.49 4.31-4.68.3 2.66-2.47 4.79-4.31 4.68z"/></svg>
+                        Apple
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <style>
+        @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+        @keyframes fadeIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
+    </style>
+
+    <script>
+        // --- Core Session Management (Cookie Simulation) ---
+        function setCookie(name, value, days) {
+            let expires = "";
+            if (days) {
+                let date = new Date();
+                date.setTime(date.getTime() + (days * 24 * 60 * 60 * 1000));
+                expires = "; expires=" + date.toUTCString();
+            }
+            // Simple btoa to simulate payload encryption
+            document.cookie = name + "=" + (btoa(value)) + expires + "; path=/";
+        }
+
+        function getCookie(name) {
+            let nameEQ = name + "=";
+            let ca = document.cookie.split(';');
+            for(let i=0;i < ca.length;i++) {
+                let c = ca[i];
+                while (c.charAt(0)==' ') c = c.substring(1,c.length);
+                if (c.indexOf(nameEQ) == 0) return atob(c.substring(nameEQ.length,c.length));
+            }
+            return null;
+        }
+
+        function deleteCookie(name) {
+            document.cookie = name + '=; Max-Age=-99999999;';
+        }
+
+        let currentUser = null;
+
+        window.onload = function() {
+            setTimeout(() => {
+                const launch = document.getElementById('launchScreen');
+                launch.style.opacity = '0';
+                setTimeout(() => launch.classList.add('hidden'), 700);
+            }, 1500);
+
+            const savedSession = getCookie('rbx_session');
+            if (savedSession) {
+                initUserSession(savedSession);
+            }
+        };
+
+        // --- Data Fetching & Skeletons ---
+        const MOCK_GAMES = [
+            { id: 1, title: 'Murder Mystery 2', dev: 'Nikilis', img: 'https://placehold.co/300x160/2b0c36/fff?text=MM2', icon: 'https://placehold.co/150x150/2b0c36/fff?text=MM2', rating: '90%', active: '283K' },
+            { id: 2, title: 'Blade Ball', dev: 'Wiggity', img: 'https://placehold.co/300x160/992222/fff?text=Blade', icon: 'https://placehold.co/150x150/992222/fff?text=Blade', rating: '93%', active: '18.2K' },
+            { id: 3, title: 'AFTERGLOW', dev: 'neon_dev', img: 'https://placehold.co/300x160/0a3d4a/fff?text=AG', icon: 'https://placehold.co/150x150/0a3d4a/fff?text=AG', rating: '--', active: '0' },
+            { id: 4, title: 'Racket', dev: 'sports_studios', img: 'https://placehold.co/300x160/223366/fff?text=Racket', icon: 'https://placehold.co/150x150/223366/fff?text=Racket', rating: '94%', active: '4.5K' }
+        ];
+
+        const MOCK_FRIENDS = [
+            { name: 'ChachiKage', status: '1w', img: 'https://placehold.co/100x100/8B4513/fff?text=C' },
+            { name: 'T_ezla', status: 'give u what?', img: 'https://placehold.co/100x100/1a1b1d/fff?text=T' },
+            { name: 'CarCarPro', status: 'Jun 22', img: 'https://placehold.co/100x100/4169E1/fff?text=B' }
+        ];
+
+        function loadHomeData() {
+            const friendsCont = document.getElementById('friendsContainer');
+            const gamesCont = document.getElementById('gamesContainer');
+            
+            // Inject Skeletons
+            let fSkel = `<div class="flex flex-col items-center gap-2 flex-shrink-0"><div class="w-20 h-20 rounded-full bg-[#232527] flex items-center justify-center border border-gray-700"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="8.5" cy="7" r="4"></circle><line x1="20" y1="8" x2="20" y2="14"></line><line x1="23" y1="11" x2="17" y2="11"></line></svg></div><span class="text-xs font-medium">Add Friends</span></div>`;
+            for(let i=0; i<3; i++) fSkel += `<div class="flex flex-col items-center gap-2 flex-shrink-0"><div class="w-20 h-20 rounded-full skeleton"></div><div class="w-16 h-3 rounded skeleton mt-1"></div></div>`;
+            friendsCont.innerHTML = fSkel;
+
+            let gSkel = '';
+            for(let i=0; i<4; i++) gSkel += `<div class="flex flex-col gap-1"><div class="w-full aspect-video rounded-lg skeleton"></div><div class="w-3/4 h-4 rounded skeleton mt-1"></div><div class="w-1/2 h-3 rounded skeleton"></div></div>`;
+            gamesCont.innerHTML = gSkel;
+
+            // Simulate Network Delay (1.2s)
+            setTimeout(() => {
+                // Populate Friends
+                let fHtml = `<div class="flex flex-col items-center gap-2 flex-shrink-0"><div class="w-20 h-20 rounded-full bg-[#232527] flex items-center justify-center border border-gray-700"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="8.5" cy="7" r="4"></circle><line x1="20" y1="8" x2="20" y2="14"></line><line x1="23" y1="11" x2="17" y2="11"></line></svg></div><span class="text-xs font-medium">Add Friends</span></div>`;
+                MOCK_FRIENDS.forEach(f => {
+                    fHtml += `<div class="flex flex-col items-center gap-2 flex-shrink-0"><div class="w-20 h-20 rounded-full overflow-hidden border border-gray-800"><img src="${f.img}" class="w-full h-full object-cover"></div><span class="text-xs font-medium text-gray-300 truncate w-20 text-center">${f.name}</span></div>`;
+                });
+                friendsCont.innerHTML = fHtml;
+
+                // Populate Games
+                let gHtml = '';
+                MOCK_GAMES.forEach(g => {
+                    gHtml += `<div class="flex flex-col gap-1 cursor-pointer hover:opacity-80 transition-opacity" onclick="openGameDetails(${g.id})">
+                        <img src="${g.img}" class="w-full aspect-video rounded-lg object-cover bg-gray-800">
+                        <h4 class="font-semibold text-sm mt-1 leading-tight truncate">${g.title}</h4>
+                        <p class="text-xs text-gray-400 flex items-center gap-1"><svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"></path></svg> ${g.rating} Rating</p>
+                    </div>`;
+                });
+                gamesCont.innerHTML = gHtml;
+                
+                // Populate Chat List dynamically
+                const chatCont = document.getElementById('chatListContainer');
+                let chatHtml = '';
+                MOCK_FRIENDS.forEach(f => {
+                    chatHtml += `<div class="p-4 border-b border-gray-800/50 flex items-center gap-4 hover:bg-white/5 cursor-pointer">
+                        <div class="w-12 h-12 rounded-full overflow-hidden bg-gray-800 flex-shrink-0"><img src="${f.img}" class="w-full h-full object-cover"></div>
+                        <div><h3 class="font-bold text-[16px]">${f.name}</h3><p class="text-[13px] text-gray-400">${f.status}</p></div>
+                    </div>`;
+                });
+                chatCont.innerHTML = chatHtml;
+                
+            }, 1200);
+        }
+
+        // --- Routing & Navigation ---
+        function navTo(viewId) {
+            document.querySelectorAll('.spa-view').forEach(el => el.classList.add('hidden'));
+            document.getElementById(viewId).classList.remove('hidden');
+            
+            // Update bottom nav state
+            if (viewId !== 'view-game') {
+                document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active', 'text-white'));
+                const activeBtn = document.querySelector(`.nav-btn[data-target="${viewId}"]`);
+                if(activeBtn) activeBtn.classList.add('active', 'text-white');
+                document.getElementById('bottomNav').classList.remove('translate-y-full');
+            } else {
+                document.getElementById('bottomNav').classList.add('translate-y-full');
+            }
+
+            if(viewId === 'view-me') {
+                initMeAvatar();
+            }
+        }
+
+        function toggleSidebar() {
+            const sb = document.getElementById('sidebar');
+            const overlay = document.getElementById('sidebarOverlay');
+            if (sb.classList.contains('-translate-x-full')) {
+                sb.classList.remove('-translate-x-full');
+                overlay.classList.remove('hidden');
+                setTimeout(() => overlay.classList.remove('opacity-0'), 10);
+            } else {
+                sb.classList.add('-translate-x-full');
+                overlay.classList.add('opacity-0');
+                setTimeout(() => overlay.classList.add('hidden'), 300);
+            }
+        }
+
+        function initUserSession(username) {
+            currentUser = username;
+            const letter = username.charAt(0).toUpperCase();
+            const avatarUrl = `https://placehold.co/100x100/222/fff?text=${letter}`;
+            
+            document.getElementById('homeUsername').innerText = username;
+            document.getElementById('homeAvatar').src = avatarUrl;
+            document.getElementById('sidebarUsername').innerHTML = `${username} <svg class="inline w-3 h-3 ml-1 text-gray-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 22 8.5 22 15.5 12 22 2 15.5 2 8.5 12 2"></polygon></svg>`;
+            document.getElementById('sidebarHandle').innerText = `@${username.toLowerCase()}_user`;
+            document.getElementById('sidebarAvatar').src = avatarUrl;
+            document.getElementById('navAvatar').src = avatarUrl;
+
+            document.getElementById('authFlow').classList.add('hidden');
+            document.getElementById('mainApp').classList.remove('hidden');
+            document.getElementById('mainApp').classList.add('flex');
+            
+            loadHomeData();
+            navTo('view-home');
+        }
+
+        function handleLogout() {
+            deleteCookie('rbx_session');
+            window.location.reload();
+        }
+
+        // Auth Form Handling
+        function handleSignupSubmit(e) {
+            e.preventDefault();
+            const username = document.getElementById('signupUsername').value.trim();
+            if(username.length < 3) {
+                document.getElementById('signupError').innerText = 'Username too short.';
+                document.getElementById('signupError').classList.remove('hidden');
+                return;
+            }
+            
+            let users = JSON.parse(localStorage.getItem('rbx_users') || '{}');
+            users[username] = { created: Date.now() };
+            localStorage.setItem('rbx_users', JSON.stringify(users));
+
+            setCookie('rbx_session', username, 7);
+            initUserSession(username);
+        }
+
+        function handleLoginSubmit(e) {
+            e.preventDefault();
+            const username = document.getElementById('loginIdentifier').value.trim();
+            
+            let users = JSON.parse(localStorage.getItem('rbx_users') || '{}');
+
+            if(users[username] || username.toLowerCase() === 'ayqshi') {
+                setCookie('rbx_session', username, 7);
+                initUserSession(username);
+            } else {
+                document.getElementById('loginError').innerText = 'Account not found. Please sign up first.';
+                document.getElementById('loginError').classList.remove('hidden');
+            }
+        }
+
+        // --- 3D Engine (Three.js) Integration ---
+        let scene, camera, renderer, animationId;
+        let meAvatarGroup = null;
+        
+        function initMeAvatar() {
+            const container = document.getElementById('meAvatarContainer');
+            if(container.children.length > 0) return; // already initialized
+            
+            const mScene = new THREE.Scene();
+            const mCam = new THREE.PerspectiveCamera(50, container.clientWidth / container.clientHeight, 0.1, 100);
+            const mRen = new THREE.WebGLRenderer({ alpha: true, antialias: true });
+            mRen.setSize(container.clientWidth, container.clientHeight);
+            container.appendChild(mRen.domElement);
+            
+            mScene.add(new THREE.AmbientLight(0xffffff, 0.8));
+            const dl = new THREE.DirectionalLight(0xffffff, 0.5);
+            dl.position.set(5, 10, 5);
+            mScene.add(dl);
+            
+            const avatar = createRiggedAvatar(0x222222);
+            avatar.position.y = -2;
+            mScene.add(avatar);
+            meAvatarGroup = avatar;
+            
+            mCam.position.set(0, 0, 10);
+            mCam.lookAt(0, 0, 0);
+            
+            let time = 0;
+            function animateMe() {
+                requestAnimationFrame(animateMe);
+                time += 0.05;
+                if(meAvatarGroup) meAvatarGroup.rotation.y = Math.sin(time * 0.5) * 0.2; // slow sway
+                mRen.render(mScene, mCam);
+            }
+            animateMe();
+        }
+
+        function createRiggedAvatar(colorHex) {
+            const group = new THREE.Group();
+            const mat = new THREE.MeshLambertMaterial({ color: colorHex });
+            const skinMat = new THREE.MeshLambertMaterial({ color: 0xf1c27d }); // skin tone
+            
+            // Standard R6 Blocky Proportions
+            const headGeo = new THREE.BoxGeometry(1, 1, 1);
+            const head = new THREE.Mesh(headGeo, skinMat);
+            head.position.y = 1.5;
+            group.add(head);
+            
+            const torsoGeo = new THREE.BoxGeometry(2, 2, 1);
+            const torso = new THREE.Mesh(torsoGeo, mat);
+            torso.position.y = 0;
+            torso.name = "torso";
+            group.add(torso);
+            
+            const armGeo = new THREE.BoxGeometry(1, 2, 1);
+            const lArm = new THREE.Mesh(armGeo, skinMat);
+            lArm.position.set(-1.5, 0, 0);
+            group.add(lArm);
+            
+            const rArm = new THREE.Mesh(armGeo, skinMat);
+            rArm.position.set(1.5, 0, 0);
+            group.add(rArm);
+            
+            const legGeo = new THREE.BoxGeometry(1, 2, 1);
+            const lLeg = new THREE.Mesh(legGeo, mat);
+            lLeg.position.set(-0.5, -2, 0);
+            lLeg.name = "lLeg";
+            group.add(lLeg);
+            
+            const rLeg = new THREE.Mesh(legGeo, mat);
+            rLeg.position.set(0.5, -2, 0);
+            rLeg.name = "rLeg";
+            group.add(rLeg);
+            
+            group.scale.set(0.7, 0.7, 0.7);
+            return group;
+        }
+
+        function equipItem(type, colorHex) {
+            if(!meAvatarGroup) return;
+            const newMat = new THREE.MeshLambertMaterial({ color: colorHex });
+            meAvatarGroup.children.forEach(child => {
+                if(child.name === "torso" || child.name === "lLeg" || child.name === "rLeg") {
+                    child.material = newMat;
+                }
+            });
+        }
+
+        function openGameDetails(gameId) {
+            const game = MOCK_GAMES.find(g => g.id === gameId);
+            if(!game) return;
+            document.getElementById('gameDetailTitle').innerText = game.title;
+            document.getElementById('gameDetailImg').src = game.img;
+            document.getElementById('gameDetailIcon').src = game.icon;
+            
+            // Set Loading info ahead of time
+            document.getElementById('loadingGameIcon').src = game.icon;
+            document.getElementById('loadingGameTitle').innerText = game.title;
+            
+            navTo('view-game');
+        }
+
+        function launchGame() {
+            document.getElementById('gameLoadingScreen').classList.remove('hidden');
+            document.getElementById('gameLoadingScreen').classList.add('flex');
+            
+            setTimeout(() => {
+                document.getElementById('gameLoadingScreen').classList.remove('flex');
+                document.getElementById('gameLoadingScreen').classList.add('hidden');
+                initGameEngine();
+            }, 2500); // 2.5s loading simulation
+        }
+
+        let playerObj, yawObj, pitchObj;
+        let moveF = false, moveB = false, moveL = false, moveR = false;
+        let pVelocity = new THREE.Vector3();
+        let pDirection = new THREE.Vector3();
+
+        function initGameEngine() {
+            document.getElementById('game3DContainer').classList.remove('hidden');
+            document.getElementById('inGameUI').classList.remove('hidden');
+            
+            const container = document.getElementById('game3DContainer');
+            if(container.children.length > 0) {
+                return; // Already initialized, just resume
+            }
+
+            scene = new THREE.Scene();
+            scene.fog = new THREE.Fog(0x87CEEB, 20, 100);
+            
+            camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            container.appendChild(renderer.domElement);
+            
+            // Grass Plane
+            const planeGeo = new THREE.PlaneGeometry(200, 200);
+            const planeMat = new THREE.MeshLambertMaterial({ color: 0x3b8526 });
+            const plane = new THREE.Mesh(planeGeo, planeMat);
+            plane.rotation.x = -Math.PI / 2;
+            scene.add(plane);
+            
+            // Lighting
+            scene.add(new THREE.AmbientLight(0xffffff, 0.6));
+            const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
+            dirLight.position.set(20, 40, 20);
+            scene.add(dirLight);
+            
+            // Spawn Player (3rd Person Setup)
+            playerObj = createRiggedAvatar(0x1a3a8a); // Blue shirt
+            playerObj.position.y = 2.1;
+            scene.add(playerObj);
+            
+            yawObj = new THREE.Object3D();
+            pitchObj = new THREE.Object3D();
+            yawObj.add(pitchObj);
+            pitchObj.add(camera);
+            scene.add(yawObj);
+            
+            camera.position.set(0, 2, 10);
+            yawObj.position.copy(playerObj.position);
+
+            // Controls & Pointer Lock
+            container.addEventListener('click', () => {
+                document.body.requestPointerLock();
+            });
+
+            document.addEventListener('mousemove', (e) => {
+                if(document.pointerLockElement === document.body) {
+                    yawObj.rotation.y -= e.movementX * 0.002;
+                    pitchObj.rotation.x -= e.movementY * 0.002;
+                    pitchObj.rotation.x = Math.max(-Math.PI/2, Math.min(Math.PI/2, pitchObj.rotation.x));
+                }
+            });
+
+            document.addEventListener('keydown', (e) => {
+                switch(e.code) {
+                    case 'KeyW': moveF = true; break;
+                    case 'KeyS': moveB = true; break;
+                    case 'KeyA': moveL = true; break;
+                    case 'KeyD': moveR = true; break;
+                    case 'Space': if(playerObj.position.y <= 2.2) pVelocity.y = 12; break;
+                }
+            });
+
+            document.addEventListener('keyup', (e) => {
+                switch(e.code) {
+                    case 'KeyW': moveF = false; break;
+                    case 'KeyS': moveB = false; break;
+                    case 'KeyA': moveL = false; break;
+                    case 'KeyD': moveR = false; break;
+                }
+            });
+
+            window.addEventListener('resize', () => {
+                camera.aspect = window.innerWidth / window.innerHeight;
+                camera.updateProjectionMatrix();
+                renderer.setSize(window.innerWidth, window.innerHeight);
+            });
+
+            let prevTime = performance.now();
+            function animateLoop() {
+                animationId = requestAnimationFrame(animateLoop);
+                
+                const time = performance.now();
+                const delta = (time - prevTime) / 1000;
+                prevTime = time;
+
+                if (document.pointerLockElement === document.body) {
+                    // Physics & Movement
+                    pVelocity.x -= pVelocity.x * 10.0 * delta;
+                    pVelocity.z -= pVelocity.z * 10.0 * delta;
+                    pVelocity.y -= 30.0 * delta; // gravity
+
+                    pDirection.z = Number(moveF) - Number(moveB);
+                    pDirection.x = Number(moveR) - Number(moveL);
+                    pDirection.normalize();
+
+                    if (moveF || moveB) pVelocity.z -= pDirection.z * 60.0 * delta;
+                    if (moveL || moveR) pVelocity.x -= pDirection.x * 60.0 * delta;
+
+                    yawObj.translateX(pVelocity.x * delta);
+                    yawObj.translateZ(pVelocity.z * delta);
+                    
+                    playerObj.position.x = yawObj.position.x;
+                    playerObj.position.z = yawObj.position.z;
+                    
+                    playerObj.position.y += pVelocity.y * delta;
+                    if (playerObj.position.y < 2.1) {
+                        pVelocity.y = 0;
+                        playerObj.position.y = 2.1;
+                    }
+                    yawObj.position.y = playerObj.position.y;
+                    
+                    // Rotate character to match camera orientation when moving
+                    if (moveF || moveB || moveL || moveR) {
+                        playerObj.rotation.y = yawObj.rotation.y;
+                    }
+                }
+
+                renderer.render(scene, camera);
+            }
+            animateLoop();
+            
+            // Populate server list for People tab
+            const plist = document.getElementById('serverPlayersList');
+            let pHtml = `<div class="bg-[#1e2022] rounded-xl p-3 flex flex-col items-center gap-2"><div class="w-12 h-12 rounded-full overflow-hidden bg-gray-700"><img src="${document.getElementById('homeAvatar').src}"></div><span class="text-xs font-bold truncate w-full text-center">${currentUser}</span></div>`;
+            MOCK_FRIENDS.forEach(f => {
+                pHtml += `<div class="bg-[#1e2022] rounded-xl p-3 flex flex-col items-center gap-2"><div class="w-12 h-12 rounded-full overflow-hidden bg-gray-700"><img src="${f.img}"></div><span class="text-xs text-gray-300 truncate w-full text-center">${f.name}</span></div>`;
+            });
+            plist.innerHTML = pHtml;
+        }
+
+        function toggleInGameMenu() {
+            const menu = document.getElementById('inGameMenu');
+            if(menu.classList.contains('hidden')) {
+                menu.classList.remove('hidden');
+                menu.classList.add('flex');
+            } else {
+                menu.classList.add('hidden');
+                menu.classList.remove('flex');
+            }
+        }
+
+        function switchGameTab(tabId) {
+            document.querySelectorAll('.game-tab').forEach(t => {
+                t.classList.remove('border-white', 'text-white');
+                t.classList.add('border-transparent');
+            });
+            document.getElementById(`tab-${tabId}`).classList.remove('border-transparent');
+            document.getElementById(`tab-${tabId}`).classList.add('border-white', 'text-white');
+            
+            document.querySelectorAll('.game-tab-content').forEach(c => {
+                c.classList.add('hidden');
+                c.classList.remove('flex');
+            });
+            const target = document.getElementById(`ingame-${tabId}`);
+            target.classList.remove('hidden');
+            if(tabId === 'people') target.classList.add('flex'); // people uses flex layout
+        }
+
+        function exitGame() {
+            toggleInGameMenu();
+            document.getElementById('game3DContainer').classList.add('hidden');
+            document.getElementById('inGameUI').classList.add('hidden');
+            navTo('view-home');
+        }
+
+        // Utility Modals/UI 
+        function openModal(id) {
+            document.getElementById(id).classList.remove('hidden');
+            if(id === 'quickSignInModal') {
+                document.getElementById('quickSignInCode').innerText = 'Unavailable';
+                document.getElementById('quickSignInQR').removeAttribute('src');
+                document.getElementById('quickSignInQR').alt = 'Quick sign-in requires a real Roblox-issued pairing session';
+            }
+        }
+        function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
+        
+        let selectedGender = null;
+        function selectGender(gender) {
+            document.getElementById('btn-female').style.backgroundColor = 'transparent';
+            document.getElementById('btn-male').style.backgroundColor = 'transparent';
+            if (selectedGender !== gender) {
+                document.getElementById(`btn-${gender}`).style.backgroundColor = 'rgba(255,255,255,0.1)';
+                selectedGender = gender;
+            } else selectedGender = null;
+        }
+
+        const eyeOpenSVG = `<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle>`;
+        const eyeClosedSVG = `<path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line>`;
+        function togglePassword(inputId, iconId) {
+            const pwdInput = document.getElementById(inputId);
+            const iconSvg = document.getElementById(iconId);
+            if (pwdInput.type === 'password') { pwdInput.type = 'text'; iconSvg.innerHTML = eyeClosedSVG; } 
+            else { pwdInput.type = 'password'; iconSvg.innerHTML = eyeOpenSVG; }
+        }
+
+        const loginIdInput = document.getElementById('loginIdentifier');
+        const loginPwdInput = document.getElementById('loginPwd');
+        const signInBtn = document.getElementById('signInBtn');
+        function updateSignInButton() {
+            if(loginIdInput.value.length > 0 && loginPwdInput.value.length > 0) {
+                signInBtn.classList.remove('bg-white/70', 'text-gray-800');
+                signInBtn.classList.add('bg-white', 'text-black');
+            } else {
+                signInBtn.classList.add('bg-white/70', 'text-gray-800');
+                signInBtn.classList.remove('bg-white', 'text-black');
+            }
+        }
+        if(loginIdInput) loginIdInput.addEventListener('input', updateSignInButton);
+        if(loginPwdInput) loginPwdInput.addEventListener('input', updateSignInButton);
+
+        function showLanding() {
+            document.getElementById('landingView').classList.remove('hidden');
+            document.getElementById('signupForm').classList.add('hidden');
+            document.getElementById('loginForm').classList.add('hidden');
+            document.getElementById('backBtn').classList.add('hidden');
+        }
+        function showLogin() {
+            document.getElementById('landingView').classList.add('hidden');
+            document.getElementById('loginForm').classList.remove('hidden');
+            document.getElementById('loginForm').classList.add('flex');
+            document.getElementById('backBtn').classList.remove('hidden');
+        }
+        function showSignup() {
+            document.getElementById('landingView').classList.add('hidden');
+            document.getElementById('signupForm').classList.remove('hidden');
+        }
+    </script>
+
+<style>
+:root{--rbx-bg:#191b1f;--rbx-panel:#23262b;--rbx-panel2:#2b2f35;--rbx-line:#383d44;--rbx-text:#f7f7f8;--rbx-muted:#aeb4bd;--rbx-blue:#335fff}
+html,body{margin:0;width:100%;height:100%;overflow:hidden!important;overscroll-behavior:none}body{background:var(--rbx-bg);color:var(--rbx-text)}
+#upgradeApp{position:fixed;inset:0;z-index:120;background:var(--rbx-bg);display:grid;grid-template-columns:238px minmax(0,1fr);overflow:hidden;font-family:Inter,Arial,sans-serif}
+#upgradeApp.hidden{display:none!important}.rbx-sidebar{background:#17191d;border-right:1px solid #30343a;padding:18px 12px;display:flex;flex-direction:column;min-height:0}.rbx-brand{height:48px;display:flex;align-items:center;gap:10px;padding:0 12px;font-size:19px;letter-spacing:1px}.rbx-diamond{font-size:28px;transform:rotate(45deg);display:inline-block}.rbx-account{display:flex;align-items:center;gap:10px;padding:14px 10px;margin:10px 0 16px;border-block:1px solid #2b2e34}.rbx-account img{width:42px;height:42px;border-radius:50%;background:#333;object-fit:cover}.rbx-account div{display:flex;flex-direction:column;min-width:0}.rbx-account b{font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.rbx-account small{color:var(--rbx-muted);font-size:11px;margin-top:3px}.rbx-account button{margin-left:auto;background:none;border:0;color:#bbb;font-size:20px}.rbx-nav{display:flex;flex-direction:column;gap:4px}.rbx-nav button{border:0;background:transparent;color:#c5c9cf;text-align:left;padding:12px 14px;border-radius:7px;font-size:17px;display:flex;align-items:center;gap:15px;cursor:pointer}.rbx-nav button span{font-size:14px;font-weight:600}.rbx-nav button:hover,.rbx-nav button.active{background:#30343b;color:#fff}.rbx-sidebar-foot{margin-top:auto;padding:14px 10px;color:#9299a3;font-size:11px;display:flex;flex-direction:column;gap:5px}.rbx-sidebar-foot small{font-size:10px}.rbx-main{min-width:0;display:flex;flex-direction:column;overflow:hidden}.rbx-topbar{height:64px;flex:none;border-bottom:1px solid #30343a;display:flex;align-items:center;gap:25px;padding:0 28px;background:#1b1d21}.rbx-toplinks{display:flex;gap:24px}.rbx-toplinks button,.rbx-top-actions button{background:none;border:0;color:#e4e6e9;font-weight:600;cursor:pointer}.rbx-search{height:38px;max-width:510px;flex:1;display:flex;align-items:center;gap:9px;background:#111317;border:1px solid #373b42;border-radius:7px;padding:0 11px;color:#aeb4bd}.rbx-search input{background:none;border:0;outline:0;color:#fff;min-width:0;flex:1;font-size:13px}.rbx-search kbd{font-size:9px;color:#858c96}.rbx-top-actions{display:flex;align-items:center;gap:18px;margin-left:auto}.rbx-top-actions button{font-size:20px}.rbx-top-actions img{width:30px;height:30px;border-radius:50%;vertical-align:middle}.rbx-content{overflow:hidden;flex:1;min-height:0;padding:28px clamp(18px,3vw,48px) 24px}.rbx-page{height:100%;max-width:1500px;margin:auto;overflow:hidden;display:flex;flex-direction:column;gap:20px}.rbx-page h1{font-size:28px;margin:0;font-weight:800;letter-spacing:-.6px}.rbx-page h2{font-size:19px;margin:0;font-weight:750}.rbx-muted{color:var(--rbx-muted)}.rbx-section-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}.rbx-section-head button,.rbx-link{background:none;border:0;color:#c4cad3;font-weight:600;cursor:pointer}.rbx-scroll-row{display:flex;gap:15px;overflow:hidden}.rbx-friend{width:84px;flex:0 0 84px;text-align:center;cursor:pointer}.rbx-friend img{width:68px;height:68px;border-radius:50%;object-fit:cover;background:#343941;display:block;margin:0 auto 7px}.rbx-friend span{font-size:11px;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.rbx-game-grid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:18px}.rbx-game{min-width:0;cursor:pointer}.rbx-game img{width:100%;aspect-ratio:16/9;object-fit:cover;border-radius:8px;background:#30343a;display:block}.rbx-game b{font-size:13px;display:block;margin-top:8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.rbx-game small{font-size:11px;color:var(--rbx-muted);display:block;margin-top:4px}.rbx-hero{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(250px,.7fr);gap:22px;min-height:170px}.rbx-banner{border-radius:12px;background:linear-gradient(110deg,#303843,#20242b);padding:25px;display:flex;flex-direction:column;justify-content:center}.rbx-banner h1{font-size:32px}.rbx-banner p{color:#c2c8d0;max-width:500px}.rbx-panel{background:var(--rbx-panel);border:1px solid #30353c;border-radius:10px;padding:18px}.rbx-row{display:flex;align-items:center;gap:14px}.rbx-row img{width:52px;height:52px;border-radius:50%;object-fit:cover;background:#343941}.rbx-row .grow{flex:1;min-width:0}.rbx-btn{border:0;border-radius:7px;background:#f3f4f6;color:#16181b;padding:10px 16px;font-weight:700;cursor:pointer}.rbx-btn.secondary{background:#3a3f47;color:#fff}.rbx-input{width:100%;box-sizing:border-box;background:#15171b;border:1px solid #41464e;color:#fff;padding:12px;border-radius:7px;outline:none}.rbx-tabs{display:flex;gap:24px;border-bottom:1px solid #3a3e45}.rbx-tabs button{background:none;border:0;color:#aeb4bd;padding:12px 0;font-weight:700;cursor:pointer}.rbx-tabs button.active{color:white;border-bottom:2px solid white}.rbx-profile-head{display:flex;align-items:center;gap:20px;background:#24282e;padding:22px;border-radius:12px}.rbx-profile-head img{width:104px;height:104px;border-radius:50%;object-fit:cover}.rbx-stats{display:flex;gap:22px;margin-top:10px;color:#c3c8d0;font-size:13px}.rbx-stats b{color:white}.rbx-list{display:flex;flex-direction:column;gap:8px;overflow:hidden}.rbx-list-item{display:flex;align-items:center;gap:12px;background:#24282e;border-radius:8px;padding:10px}.rbx-list-item img{width:46px;height:46px;border-radius:8px;object-fit:cover;background:#343941}.rbx-empty{padding:28px;text-align:center;color:#9da5af;background:#22262c;border-radius:10px}.rbx-mobile-menu,.rbx-mobile-nav{display:none}
+@media(max-width:1000px){#upgradeApp{grid-template-columns:200px minmax(0,1fr)}.rbx-game-grid{grid-template-columns:repeat(3,minmax(0,1fr))}.rbx-topbar{padding:0 16px;gap:14px}.rbx-toplinks{gap:12px}}
+@media(max-width:700px){#upgradeApp{grid-template-columns:1fr}.rbx-sidebar{position:absolute;z-index:5;inset:0 auto 0 0;width:250px;transform:translateX(-105%);transition:transform .22s ease;box-shadow:15px 0 40px #0008}.nav-open .rbx-sidebar{transform:translateX(0)}.rbx-topbar{height:56px;padding:0 12px;gap:12px}.rbx-mobile-menu{display:block;background:none;border:0;color:white;font-size:22px}.rbx-toplinks{display:none}.rbx-search{height:36px}.rbx-top-actions{gap:9px}.rbx-top-actions button:first-child{display:none}.rbx-content{padding:18px 14px 76px}.rbx-page{gap:16px}.rbx-page h1{font-size:24px}.rbx-game-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}.rbx-hero{grid-template-columns:1fr}.rbx-profile-head{align-items:flex-start;padding:14px;gap:13px}.rbx-profile-head img{width:76px;height:76px}.rbx-mobile-nav{display:flex;position:absolute;bottom:0;left:0;right:0;height:62px;background:#17191d;border-top:1px solid #343941;justify-content:space-around;align-items:center;padding-bottom:env(safe-area-inset-bottom)}.rbx-mobile-nav button{background:none;border:0;color:#ddd;font-size:20px;display:flex;flex-direction:column;align-items:center;gap:3px}.rbx-mobile-nav small{font-size:9px}.rbx-sidebar-foot{padding-bottom:80px}}
+@media(min-width:1400px){.rbx-game-grid{grid-template-columns:repeat(6,minmax(0,1fr))}.rbx-content{padding-top:34px}}
+/* This clone intentionally locks the viewport. Lists and carousels are clipped rather than creating page scroll. */
+</style>
+<script>
+(()=>{
+'use strict';
+const API='https://rolook-lilac.vercel.app';
+const R={users:'https://users.roblox.com/v1',friends:'https://friends.roblox.com/v1',groups:'https://groups.roblox.com/v2',badges:'https://badges.roblox.com/v1',games:'https://games.roblox.com/v2',thumbs:'https://thumbnails.roblox.com/v1'};
+const state={user:null,userId:null,avatar:null,friends:[],games:[],profile:null,active:'home',cache:new Map()};
+const $=id=>document.getElementById(id); const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+async function get(url){const key=url;if(state.cache.has(key))return state.cache.get(key);const res=await fetch(url,{headers:{'Accept':'application/json'}});if(!res.ok)throw new Error(`API ${res.status}: ${res.statusText}`);const data=await res.json();state.cache.set(key,data);return data}
+async function post(url,body){const res=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json','Accept':'application/json'},body:JSON.stringify(body)});if(!res.ok)throw new Error(`API ${res.status}: ${res.statusText}`);return res.json()}
+function imgFor(id){return `https://www.roblox.com/headshot-thumbnail/image?userId=${id}&width=420&height=420&format=png`}
+function page(html){$('rbxContent').innerHTML=`<section class="rbx-page">${html}</section>`}
+function fail(err){page(`<h1>Unable to load data</h1><div class="rbx-empty">${esc(err.message||err)}<br><small>Public Roblox endpoints may rate-limit or block browser-origin requests. Try again in a moment.</small></div><button class="rbx-btn secondary" onclick="rbxNavigate('${state.active}')">Retry</button>`)}
+function setIdentity(u){state.user=u.name||u.displayName;state.userId=u.id;state.profile=u;$('rbxSideName').textContent=state.user;$('rbxSideHandle').textContent='@'+(u.name||'');$('rbxSideAvatar').src=imgFor(u.id);$('rbxTopAvatar').src=imgFor(u.id)}
+window.rbxClearCache=()=>{state.cache.clear();rbxNavigate('home')};
+window.rbxNavigate=async function(which){state.active=which;document.querySelectorAll('#rbxSideNav button').forEach(b=>b.classList.toggle('active',b.dataset.page===which));$('upgradeApp').classList.remove('nav-open');try{
+if(which==='home'){if(!state.userId){page(`<div class="rbx-banner"><h1>Discover Roblox</h1><p>Search for a public Roblox username to load their profile, friends, groups, badges and experiences.</p><form onsubmit="event.preventDefault();rbxSearch(this.querySelector('input').value)" style="display:flex;gap:8px;max-width:560px"><input class="rbx-input" placeholder="Enter a Roblox username"><button class="rbx-btn">Search</button></form></div>`);return} await loadHome();}
+else if(which==='discover'){page(`<h1>Discover</h1><div class="rbx-panel"><h2>Find an experience</h2><form onsubmit="event.preventDefault();rbxGameSearch(this.querySelector('input').value)" style="display:flex;gap:8px;margin-top:12px"><input class="rbx-input" placeholder="Search public Roblox experiences"><button class="rbx-btn">Search</button></form></div><div id="rbxDiscoverResults" class="rbx-empty">Search for an experience to view matching public results.</div>`)}
+else if(which==='friends'){if(!state.userId){page(`<h1>Friends</h1><div class="rbx-empty">Search for a Roblox username first.</div>`);return}await loadFriends()}
+else if(which==='profile'){if(!state.userId){rbxNavigate('home');return}await loadProfile(state.userId)}
+else if(which==='groups'){if(!state.userId){page(`<h1>Communities</h1><div class="rbx-empty">Search for a Roblox username first.</div>`);return}await loadGroups()}
+else if(which==='badges'){if(!state.userId){page(`<h1>Badges</h1><div class="rbx-empty">Search for a Roblox username first.</div>`);return}await loadBadges()}
+else if(which==='messages'){page(`<h1>Messages</h1><div class="rbx-empty">Private messages require Roblox account authorization. This public-data explorer does not access private inboxes.</div>`)}
+else if(which==='settings'){page(`<h1>Settings</h1><div class="rbx-panel"><h2>Connection</h2><p class="rbx-muted">Public Roblox profile data only. No Roblox password or .ROBLOSECURITY cookie is collected.</p><button class="rbx-btn secondary" onclick="rbxClearCache()">Clear cached data</button></div><div class="rbx-panel"><h2>API source</h2><p class="rbx-muted">RoLookup is an unofficial public profile explorer. Its rendered API documentation did not expose machine-readable endpoint paths to this browser research session, so this build uses documented public Roblox web API routes for read-only profile data.</p><a href="https://rolook-lilac.vercel.app/?view=api" target="_blank" rel="noopener" style="color:#b9c8ff">Open RoLookup API reference</a></div>`)}
+}catch(e){console.error(e);fail(e)}};
+window.rbxSearch=async function(name){name=(name||'').trim();if(!name)return;page(`<h1>Searching</h1><div class="rbx-empty">Resolving @${esc(name)}…</div>`);try{const d=await post(`${R.users}/usernames/users`,{usernames:[name],excludeBannedUsers:false});const u=d.data?.[0];if(!u)throw new Error('No public Roblox user matched that username.');setIdentity(u);rbxNavigate('profile')}catch(e){fail(e)}};
+async function avatarFor(id){try{const d=await get(imgFor(id));return d.data?.[0]?.imageUrl||''}catch{return ''}}
+async function loadHome(){page(`<div class="rbx-hero"><div class="rbx-banner"><h1>Welcome back, ${esc(state.user)}</h1><p>Continue exploring public Roblox profiles, communities and experiences.</p></div><div class="rbx-panel"><div class="rbx-row"><img src="${imgFor(state.userId)}"><div class="grow"><b>${esc(state.user)}</b><div class="rbx-muted">@${esc(state.profile.name)}</div></div><button class="rbx-btn secondary" onclick="rbxNavigate('profile')">Profile</button></div></div></div><div><div class="rbx-section-head"><h2>Friends</h2><button onclick="rbxNavigate('friends')">See all</button></div><div id="rbxHomeFriends" class="rbx-scroll-row"><div class="rbx-empty">Loading friends…</div></div></div><div><div class="rbx-section-head"><h2>Public experiences</h2><button onclick="rbxNavigate('discover')">Discover</button></div><div id="rbxHomeGames" class="rbx-game-grid"><div class="rbx-empty">Loading experiences…</div></div></div>`);const [f,g]=await Promise.allSettled([get(`${R.friends}/users/${state.userId}/friends?limit=20`),get(`${R.games}/users/${state.userId}/games?accessFilter=Public&limit=12&sortOrder=Desc`)]);if(f.status==='fulfilled'){state.friends=f.value.data||[];const imgs=await Promise.all(state.friends.slice(0,12).map(x=>avatarFor(x.id)));$('rbxHomeFriends').innerHTML=state.friends.length?state.friends.slice(0,12).map((x,i)=>`<div class="rbx-friend" onclick="rbxSearch('${esc(x.name)}')"><img src="${imgs[i]||imgFor(x.id)}"><span>${esc(x.name)}</span></div>`).join(''):`<div class="rbx-empty">No public friends listed.</div>`}else $('rbxHomeFriends').innerHTML=`<div class="rbx-empty">Friends unavailable: ${esc(f.reason.message)}</div>`;if(g.status==='fulfilled'){state.games=g.value.data||[];$('rbxHomeGames').innerHTML=state.games.length?state.games.map(x=>gameCard(x)).join(''):`<div class="rbx-empty">No public experiences found.</div>`;hydrateGameThumbs($('rbxHomeGames'));hydrateGameThumbs($('rbxHomeGames'))}else $('rbxHomeGames').innerHTML=`<div class="rbx-empty">Experiences unavailable: ${esc(g.reason.message)}</div>`}
+function gameCard(g){return `<article class="rbx-game" onclick="rbxGameDetails(${Number(g.id)},'${esc(g.name)}')"><img loading="lazy" data-game-thumb="${Number(g.id)}" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='9'%3E%3Crect width='100%25' height='100%25' fill='%23343a42'/%3E%3C/svg%3E"><b>${esc(g.name)}</b><small>${Number(g.placeVisits||0).toLocaleString()} visits</small></article>`}
+async function hydrateGameThumbs(root){const nodes=[...root.querySelectorAll('[data-game-thumb]')];if(!nodes.length)return;const ids=[...new Set(nodes.map(n=>n.dataset.gameThumb))];try{const d=await get(`${R.thumbs}/games/icons?universeIds=${ids.join(',')}&size=512x512&format=Png&isCircular=false`);(d.data||[]).forEach(x=>{const el=root.querySelector(`[data-game-thumb=\"${x.targetId}\"]`);if(el&&x.imageUrl)el.src=x.imageUrl})}catch(e){console.warn('Game thumbnails unavailable',e)}}
+async function loadFriends(){page(`<h1>Friends of ${esc(state.user)}</h1><div class="rbx-panel"><input class="rbx-input" placeholder="Search this friends list" oninput="rbxFilterList(this.value,'rbxFriendList')"></div><div id="rbxFriendList" class="rbx-list"><div class="rbx-empty">Loading friends…</div></div>`);const d=await get(`${R.friends}/users/${state.userId}/friends?limit=100`);state.friends=d.data||[];const av=await Promise.all(state.friends.map(x=>avatarFor(x.id)));$('rbxFriendList').innerHTML=state.friends.length?state.friends.map((x,i)=>`<div class="rbx-list-item" data-search="${esc(x.name.toLowerCase())}"><img src="${av[i]||imgFor(x.id)}"><div class="grow"><b>${esc(x.displayName||x.name)}</b><div class="rbx-muted">@${esc(x.name)}</div></div><button class="rbx-btn secondary" onclick="rbxSearch('${esc(x.name)}')">View</button></div>`).join(''):`<div class="rbx-empty">No public friends found.</div>`}
+window.rbxFilterList=(q,id)=>{document.querySelectorAll(`#${id} [data-search]`).forEach(x=>x.style.display=x.dataset.search.includes(q.toLowerCase())?'flex':'none')};
+async function loadProfile(id){const [p,f,g]=await Promise.all([get(`${R.users}/users/${id}`),get(`${R.friends}/users/${id}/friends/count`),get(`${R.friends}/users/${id}/followers/count`)]);setIdentity(p);const av=await avatarFor(id);page(`<div class="rbx-profile-head"><img src="${av||imgFor(id)}"><div class="grow"><h1>${esc(p.displayName||p.name)}</h1><div class="rbx-muted">@${esc(p.name)}</div><div class="rbx-stats"><span><b>${f.count??'—'}</b> Friends</span><span><b>${g.count??'—'}</b> Followers</span></div></div><button class="rbx-btn secondary" onclick="loadProfile(${id})">Refresh</button></div><div class="rbx-tabs"><button class="active">About</button><button onclick="rbxNavigate('friends')">Friends</button><button onclick="rbxNavigate('groups')">Communities</button><button onclick="rbxNavigate('badges')">Badges</button></div><div class="rbx-panel"><h2>About</h2><p class="rbx-muted">${esc(p.description||'This user has not added a description.')}</p><div class="rbx-stats"><span>User ID <b>${id}</b></span><span>Created <b>${p.created?new Date(p.created).toLocaleDateString():'—'}</b></span></div></div><div class="rbx-section-head"><h2>Public experiences</h2><button onclick="rbxNavigate('discover')">Discover</button></div><div class="rbx-empty">Use the Home page to load the account's public creations.</div>`)}
+async function loadGroups(){page(`<h1>Communities</h1><div id="rbxGroupList" class="rbx-list"><div class="rbx-empty">Loading memberships…</div></div>`);const d=await get(`${R.groups}/users/${state.userId}/groups/roles`);const rows=d.data||[];$('rbxGroupList').innerHTML=rows.length?rows.map(x=>`<div class="rbx-list-item"><img data-group-thumb="${x.group.id}" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16'%3E%3Crect width='100%25' height='100%25' fill='%23343a42'/%3E%3C/svg%3E"><div class="grow"><b>${esc(x.group.name)}</b><div class="rbx-muted">${Number(x.group.memberCount||0).toLocaleString()} members · ${esc(x.role?.name||'Member')}</div></div></div>`).join(''):`<div class="rbx-empty">No public group memberships found.</div>`;try{const ids=rows.map(x=>x.group.id);if(ids.length){const t=await get(`${R.thumbs}/groups/icons?groupIds=${ids.join(',')}&size=150x150&format=Png&isCircular=false`);(t.data||[]).forEach(x=>{const el=document.querySelector(`[data-group-thumb="${x.targetId}"]`);if(el&&x.imageUrl)el.src=x.imageUrl})}}catch(e){console.warn(e)}}
+async function loadBadges(){page(`<h1>Badges</h1><div id="rbxBadgeList" class="rbx-game-grid"><div class="rbx-empty">Loading badges…</div></div>`);const d=await get(`${R.badges}/users/${state.userId}/badges?limit=50&sortOrder=Desc`);const rows=d.data||[];$('rbxBadgeList').innerHTML=rows.length?rows.map(x=>`<article class="rbx-game"><img data-badge-thumb="${x.id}" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16'%3E%3Crect width='100%25' height='100%25' fill='%23343a42'/%3E%3C/svg%3E"><b>${esc(x.name)}</b><small>${esc(x.description||'')}</small></article>`).join(''):`<div class="rbx-empty">No public badges found.</div>`;try{const ids=rows.map(x=>x.id);if(ids.length){const t=await get(`${R.thumbs}/badges/icons?badgeIds=${ids.join(',')}&size=150x150&format=Png`);(t.data||[]).forEach(x=>{const el=document.querySelector(`[data-badge-thumb="${x.targetId}"]`);if(el&&x.imageUrl)el.src=x.imageUrl})}}catch(e){console.warn(e)}}
+window.rbxGameSearch=async function(q){q=(q||'').trim();if(!q)return;const el=$('rbxDiscoverResults');el.className='rbx-empty';el.textContent='Searching public experiences…';try{const sid=(crypto.randomUUID?crypto.randomUUID():String(Date.now()));const d=await get(`https://apis.roblox.com/search-api/omni-search?searchQuery=${encodeURIComponent(q)}&sessionId=${encodeURIComponent(sid)}&pageType=all`);const buckets=d.searchResults||d.data||[];const raw=Array.isArray(buckets)?buckets.flatMap(x=>x.contents||x.results||[]):[];const rows=raw.filter(x=>x.universeId||x.id).map(x=>({id:x.universeId||x.id,name:x.name||x.title,placeVisits:x.placeVisits||x.visits||0}));el.className='rbx-game-grid';el.innerHTML=rows.length?rows.map(gameCard).join(''):'<div class="rbx-empty">No experience results were returned for this search.</div>';hydrateGameThumbs(el)}catch(e){el.textContent='Search is unavailable: '+e.message}};
+window.rbxGameDetails=async function(id,name){page(`<h1>${esc(name)}</h1><div class="rbx-empty">Loading experience details…</div>`);try{const d=await get(`https://games.roblox.com/v1/games?universeIds=${id}`);const g=d.data?.[0];if(!g)throw new Error('No experience details returned.');page(`<div class="rbx-panel"><img id="rbxExperienceHero" style="width:100%;max-height:330px;object-fit:cover;border-radius:8px" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='9'%3E%3Crect width='100%25' height='100%25' fill='%23343a42'/%3E%3C/svg%3E"><h1 style="margin-top:16px">${esc(g.name)}</h1><p class="rbx-muted">By ${esc(g.creator?.name||'Unknown creator')}</p><div class="rbx-stats"><span><b>${Number(g.playing||0).toLocaleString()}</b> Playing</span><span><b>${Number(g.visits||0).toLocaleString()}</b> Visits</span><span><b>${Number(g.favorites||0).toLocaleString()}</b> Favorites</span></div><p>${esc(g.description||'No description.')}</p><button class="rbx-btn" onclick="launchGame()">Play local 3D preview</button> <a class="rbx-btn secondary" style="display:inline-block;text-decoration:none" target="_blank" rel="noopener" href="https://www.roblox.com/games/${g.rootPlaceId}">Open on Roblox</a></div>`);try{const t=await get(`${R.thumbs}/games/multiget/thumbnails?universeIds=${id}&countPerUniverse=1&defaults=true&size=768x432&format=Png&isCircular=false`);const image=t.data?.[0]?.thumbnails?.[0]?.imageUrl;if(image&&$('rbxExperienceHero'))$('rbxExperienceHero').src=image}catch(e){console.warn(e)}}catch(e){fail(e)}};
+// No password is transmitted, stored, or treated as Roblox authentication. A username lookup loads public data only.
+const oldLogin=window.handleLoginSubmit;window.handleLoginSubmit=function(e){e.preventDefault();const username=$('loginIdentifier')?.value.trim();if(!username)return;rbxSearch(username)};
+const oldSignup=window.handleSignupSubmit;window.handleSignupSubmit=function(e){e.preventDefault();const username=$('signupUsername')?.value.trim();if(!username)return;rbxSearch(username)};
+window.initUserSession=function(username){document.getElementById('authFlow').classList.add('hidden');document.getElementById('mainApp').classList.add('hidden');$('upgradeApp').classList.remove('hidden');rbxSearch(username)};
+// Avoid persisting any credential-like value. The original mock cookie/session is not used.
+window.handleLogout=function(){state.user=null;state.userId=null;$('upgradeApp').classList.add('hidden');$('authFlow').classList.remove('hidden');showLanding()};
+// QR modal is prewarmed with an explanatory state, never a fabricated pairing code.
+const qr=$('quickSignInQR');if(qr){qr.removeAttribute('src');qr.alt='A Roblox-issued pairing QR is not available through the public profile API.'}
+// Rebuilt local 3D playground: articulated avatar, orbit camera, acceleration, gravity, jump and solid obstacles.
+let rbxEngine=null;
+function createRiggedAvatar(shirtColor=0x2463a6){
+ const root=new THREE.Group(); root.name='RobloxAvatar';
+ const mat=(c)=>new THREE.MeshStandardMaterial({color:c,roughness:.86});
+ const shirt=mat(shirtColor), pants=mat(0x26364b), skin=mat(0xd6a77b), dark=mat(0x242424), white=mat(0xf2f2f2);
+ const box=(w,h,d,m)=>new THREE.Mesh(new THREE.BoxGeometry(w,h,d),m);
+ const torso=box(1.95,2,1,shirt);torso.position.y=3.05;torso.castShadow=true;root.add(torso);torso.name='torso';
+ const head=box(1.05,1.05,1.05,skin);head.position.set(0,4.62,0);head.castShadow=true;root.add(head);head.name='head';
+ // Simple face detail on the front (+Z).
+ const eyeGeo=new THREE.SphereGeometry(.055,8,8);[-.22,.22].forEach(x=>{const e=new THREE.Mesh(eyeGeo,dark);e.position.set(x,4.7,.535);root.add(e)});
+ const mouth=box(.22,.035,.025,dark);mouth.position.set(0,4.42,.54);root.add(mouth);
+ function limb(name,x,y,length,width,material){const pivot=new THREE.Group();pivot.position.set(x,y,0);const mesh=box(width,length,width,material);mesh.position.y=-length/2;mesh.castShadow=true;pivot.add(mesh);pivot.name=name;root.add(pivot);return pivot}
+ const leftArm=limb('leftArm',-1.18,3.9,1.8,.78,skin),rightArm=limb('rightArm',1.18,3.9,1.8,.78,skin);
+ const leftLeg=limb('leftLeg',-.5,2.05,1.9,.88,pants),rightLeg=limb('rightLeg',.5,2.05,1.9,.88,pants);
+ // Classic blocky hands and feet are integrated into the limbs; joints pivot naturally.
+ root.userData.parts={torso,head,leftArm,rightArm,leftLeg,rightLeg,shirt,pants,skin};
+ root.userData.height=5.15;root.userData.walkTime=0;return root;
+}
+function initGameEngine(){
+ const host=document.getElementById('game3DContainer'),hud=document.getElementById('inGameUI');host.classList.remove('hidden');hud.classList.remove('hidden');
+ if(rbxEngine){rbxEngine.active=true;return}
+ const scene=new THREE.Scene();scene.background=new THREE.Color(0x91c9ed);scene.fog=new THREE.Fog(0x91c9ed,65,190);
+ const camera=new THREE.PerspectiveCamera(65,innerWidth/innerHeight,.1,700);
+ const renderer=new THREE.WebGLRenderer({antialias:true,alpha:false,powerPreference:'high-performance'});renderer.setPixelRatio(Math.min(devicePixelRatio||1,2));renderer.setSize(innerWidth,innerHeight);renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;renderer.outputEncoding=THREE.sRGBEncoding;host.innerHTML='';host.appendChild(renderer.domElement);renderer.domElement.style.cssText='display:block;width:100%;height:100%;touch-action:none;outline:none';
+ scene.add(new THREE.HemisphereLight(0xe7f5ff,0x64734b,1.15));const sun=new THREE.DirectionalLight(0xfff3dc,1.25);sun.position.set(-35,60,28);sun.castShadow=true;sun.shadow.mapSize.set(2048,2048);sun.shadow.camera.left=-75;sun.shadow.camera.right=75;sun.shadow.camera.top=75;sun.shadow.camera.bottom=-75;scene.add(sun);
+ const ground=new THREE.Mesh(new THREE.PlaneGeometry(500,500),new THREE.MeshStandardMaterial({color:0x5e9b49,roughness:1}));ground.rotation.x=-Math.PI/2;ground.receiveShadow=true;scene.add(ground);
+ const grid=new THREE.GridHelper(500,100,0x548747,0x6aa257);grid.position.y=.015;grid.material.transparent=true;grid.material.opacity=.12;scene.add(grid);
+ const mat=(c)=>new THREE.MeshStandardMaterial({color:c,roughness:.9});const colliders=[];
+ function block(x,y,z,w,h,d,c){const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),mat(c));m.position.set(x,y+h/2,z);m.castShadow=true;m.receiveShadow=true;scene.add(m);colliders.push({minX:x-w/2,maxX:x+w/2,minZ:z-d/2,maxZ:z+d/2,top:h,mesh:m});return m}
+ // A small, readable block-built spawn plaza rather than a featureless grass plane.
+ block(0,0,-16,34,1,2,0x8a8f91);block(-16,0,0,2,1,34,0x8a8f91);block(16,0,0,2,1,34,0x8a8f91);block(0,0,16,34,1,2,0x8a8f91);
+ block(-8,0,-8,5,5,5,0xd7b46a);block(8,0,-10,7,3,5,0xb5c5d2);block(9,0,8,5,7,5,0xd3d8dc);block(-10,0,9,6,2,6,0x9c7855);
+ // Low-poly trees with proper trunks and layered foliage.
+ for(let i=0;i<18;i++){const x=Math.sin(i*12.31)*42,z=Math.cos(i*8.71)*42;if(Math.abs(x)<21&&Math.abs(z)<21)continue;const trunk=new THREE.Mesh(new THREE.CylinderGeometry(.35,.48,3,7),mat(0x765035));trunk.position.set(x,1.5,z);trunk.castShadow=true;scene.add(trunk);const crown=new THREE.Mesh(new THREE.ConeGeometry(2.2,5,7),mat(i%2?0x397c3d:0x468a43));crown.position.set(x,5,z);crown.castShadow=true;scene.add(crown)}
+ // Spawn platform and player
+ const spawn=block(0,0,3,8,.35,7,0x777f89);spawn.position.y=.175;
+ const player=createRiggedAvatar(0x2463a6);player.position.set(0,.36,3);scene.add(player);
+ const avatarHeight=5.15, state={x:0,z:3,y:.36,vx:0,vy:0,vz:0,onGround:true,yaw:0,pitch:-.16,walk:false,active:true};
+ let last=performance.now(),raf=0;const keys=new Set();let dragging=false,lastX=0,lastY=0;const rayDown=new THREE.Raycaster();
+ function resize(){camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight)}window.addEventListener('resize',resize);
+ function pointer(e){if(document.pointerLockElement===renderer.domElement){state.yaw-=e.movementX*.0022;state.pitch=Math.max(-.85,Math.min(.48,state.pitch-e.movementY*.0018))}}
+ renderer.domElement.addEventListener('click',()=>{if(innerWidth>760&&document.pointerLockElement!==renderer.domElement)renderer.domElement.requestPointerLock?.()});document.addEventListener('mousemove',pointer);
+ renderer.domElement.addEventListener('pointerdown',e=>{if(innerWidth<=760){dragging=true;lastX=e.clientX;lastY=e.clientY;renderer.domElement.setPointerCapture?.(e.pointerId)}});renderer.domElement.addEventListener('pointermove',e=>{if(dragging&&innerWidth<=760){state.yaw-=(e.clientX-lastX)*.006;state.pitch=Math.max(-.85,Math.min(.48,state.pitch-(e.clientY-lastY)*.004));lastX=e.clientX;lastY=e.clientY}});renderer.domElement.addEventListener('pointerup',()=>dragging=false);renderer.domElement.addEventListener('pointercancel',()=>dragging=false);
+ const down=e=>{if(['KeyW','KeyA','KeyS','KeyD','ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Space'].includes(e.code)&&!e.repeat){if(e.code==='Space'&&state.onGround){state.vy=13;state.onGround=false}keys.add(e.code)}};const up=e=>keys.delete(e.code);document.addEventListener('keydown',down);document.addEventListener('keyup',up);document.addEventListener('pointerlockchange',()=>{if(document.pointerLockElement!==renderer.domElement)keys.clear()});
+ function resolveXZ(nx,nz){const r=.48;for(const c of colliders){if(state.y>c.top+.05)continue;if(nx+r>c.minX&&nx-r<c.maxX&&nz+r>c.minZ&&nz-r<c.maxZ){const px=Math.min(Math.abs(nx-r-c.maxX),Math.abs(c.minX-(nx+r)));const pz=Math.min(Math.abs(nz-r-c.maxZ),Math.abs(c.minZ-(nz+r)));if(px<pz)nx=state.x;else nz=state.z}}return [nx,nz]}
+ function animate(now){raf=requestAnimationFrame(animate);if(!state.active)return;const dt=Math.min((now-last)/1000,.04);last=now;
+ const f=(keys.has('KeyW')||keys.has('ArrowUp')?1:0)-(keys.has('KeyS')||keys.has('ArrowDown')?1:0),s=(keys.has('KeyD')||keys.has('ArrowRight')?1:0)-(keys.has('KeyA')||keys.has('ArrowLeft')?1:0);const moving=!!(f||s),fast=keys.has('ShiftLeft')||keys.has('ShiftRight'),speed=fast?17:10;
+ const sin=Math.sin(state.yaw),cos=Math.cos(state.yaw);let dx=(s*cos-f*sin),dz=(s*sin+f*cos);const len=Math.hypot(dx,dz)||1;dx=dx/len*speed;dz=dz/len*speed;const accel=state.onGround?15:5;state.vx+=(dx-state.vx)*Math.min(1,accel*dt);state.vz+=(dz-state.vz)*Math.min(1,accel*dt);if(!moving){state.vx*=Math.max(0,1-10*dt);state.vz*=Math.max(0,1-10*dt)}
+ let [nx,nz]=resolveXZ(state.x+state.vx*dt,state.z+state.vz*dt);state.x=THREE.MathUtils.clamp(nx,-240,240);state.z=THREE.MathUtils.clamp(nz,-240,240);state.vy-=32*dt;state.y+=state.vy*dt;if(state.y<=.36){state.y=.36;state.vy=0;state.onGround=true}
+ player.position.set(state.x,state.y,state.z);player.rotation.y=state.yaw+(moving?0:0);const parts=player.userData.parts;parts.leftArm.rotation.x=moving?Math.sin(now*.012)*.65:Math.sin(now*.002)*.025;parts.rightArm.rotation.x=moving?-Math.sin(now*.012)*.65:Math.sin(now*.002)*.025;parts.leftLeg.rotation.x=moving?-Math.sin(now*.012)*.62:0;parts.rightLeg.rotation.x=moving?Math.sin(now*.012)*.62:0;
+ const target=new THREE.Vector3(state.x,state.y+3.2,state.z);const dist=12;const horiz=Math.cos(state.pitch)*dist;camera.position.set(state.x+Math.sin(state.yaw)*horiz,target.y+Math.sin(-state.pitch)*dist,state.z+Math.cos(state.yaw)*horiz);camera.lookAt(target);
+ renderer.render(scene,camera)}animate(last);
+ // Touch-friendly joystick + jump button (only visible on touch layouts).
+ let touch=document.getElementById('rbxTouchControls');if(!touch){touch=document.createElement('div');touch.id='rbxTouchControls';touch.innerHTML='<div class="rbx-stick" id="rbxStick"><i></i></div><button id="rbxJump">JUMP</button>';document.body.appendChild(touch);const style=document.createElement('style');style.textContent='#rbxTouchControls{display:none;position:fixed;z-index:265;inset:auto 18px 26px 18px;justify-content:space-between;align-items:end;pointer-events:none}.rbx-stick{width:112px;height:112px;border:1px solid #ffffff70;background:#0005;border-radius:50%;display:grid;place-items:center;pointer-events:auto;touch-action:none}.rbx-stick i{width:44px;height:44px;border-radius:50%;background:#ffffffb8}.rbx-stick.active i{transform:translate(var(--dx,0),var(--dy,0))}#rbxJump{width:76px;height:76px;border-radius:50%;border:1px solid #fff9;background:#0008;color:white;font-weight:800;pointer-events:auto}@media(max-width:760px){#rbxTouchControls{display:flex}}';document.head.appendChild(style);let stick=$('rbxStick'),origin=null;stick.addEventListener('pointerdown',e=>{origin={x:e.clientX,y:e.clientY};stick.setPointerCapture(e.pointerId)});stick.addEventListener('pointermove',e=>{if(!origin)return;const x=e.clientX-origin.x,y=e.clientY-origin.y,dx=Math.max(-35,Math.min(35,x)),dy=Math.max(-35,Math.min(35,y));stick.style.setProperty('--dx',dx+'px');stick.style.setProperty('--dy',dy+'px');stick.classList.add('active');keys.delete('KeyW');keys.delete('KeyS');keys.delete('KeyA');keys.delete('KeyD');if(dy<-10)keys.add('KeyW');if(dy>10)keys.add('KeyS');if(dx<-10)keys.add('KeyA');if(dx>10)keys.add('KeyD')});const release=()=>{origin=null;stick.classList.remove('active');['KeyW','KeyS','KeyA','KeyD'].forEach(k=>keys.delete(k));stick.style.setProperty('--dx','0px');stick.style.setProperty('--dy','0px')};stick.addEventListener('pointerup',release);stick.addEventListener('pointercancel',release);$('rbxJump').addEventListener('pointerdown',()=>{if(state.onGround){state.vy=13;state.onGround=false}})}
+ rbxEngine={scene,camera,renderer,player,state,active:true,stop(){state.active=false;cancelAnimationFrame(raf);document.removeEventListener('mousemove',pointer);document.removeEventListener('keydown',down);document.removeEventListener('keyup',up);window.removeEventListener('resize',resize);renderer.dispose()}};
+}
+window.initGameEngine=initGameEngine;
+window.launchGame=function(){document.getElementById('gameLoadingScreen').classList.remove('hidden');document.getElementById('gameLoadingScreen').classList.add('flex');setTimeout(()=>{document.getElementById('gameLoadingScreen').classList.add('hidden');document.getElementById('gameLoadingScreen').classList.remove('flex');initGameEngine()},650)};
+window.exitGame=function(){if(rbxEngine)rbxEngine.active=false;document.exitPointerLock?.();document.getElementById('game3DContainer').classList.add('hidden');document.getElementById('inGameUI').classList.add('hidden');document.getElementById('inGameMenu').classList.add('hidden');rbxNavigate('home')};
+// Desktop app starts on profile landing if a previous demo session exists; no password is needed.
+window.addEventListener('load',()=>{const saved=(document.cookie.match(/(?:^|; )rbx_session=([^;]+)/)||[])[1];if(saved){try{initUserSession(atob(saved))}catch{}}});
+})();
+</script>
+
+</body>
+</html>
