@@ -77,7 +77,7 @@ const I={home:'M3 10l9-7 9 7v11H3z',search:'M11 4a7 7 0 100 14 7 7 0 000-14zM21 
 I.hex='M12 2l9 5v10l-9 5-9-5V7zM10 10h4v4h-4z';I.info='M12 22a10 10 0 100-20 10 10 0 000 20zM12 16v-4M12 8h.01';I.img='M3 3h18v18H3zM8.5 10a1.5 1.5 0 100-3 1.5 1.5 0 000 3zM21 15l-5-5L5 21';I.flag='M4 22V4M4 4h14l-3 5 3 5H4';I.lock='M5 11h14v10H5zM8 11V7a4 4 0 018 0v4';I.vol='M11 5L6 9H2v6h4l5 4zM15 9a4 4 0 010 6M18 6a8 8 0 010 12';I.undo='M9 14L4 9l5-5M4 9h11a5 5 0 010 10h-3';I.redo='M15 14l5-5-5-5M20 9H9a5 5 0 000 10h3';I.chev='M9 18l6-6-6-6';I.minus='M5 12h14';I.grid='M3 3h7v7H3zM14 3h7v7h-7zM3 14h7v7H3zM14 14h7v7h-7z';I.list='M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01';I.arr='M12 19V5M5 12l7-7 7 7';const ic=(n,s=24,f='none')=>`<svg width="${s}" height="${s}" viewBox="0 0 24 24" fill="${f}" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="${I[n]}"/></svg>`;
 const ph=(t,c='#232427')=>'data:image/svg+xml,'+encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="160" height="90"><rect width="160" height="90" fill="${c}"/><text x="80" y="56" fill="#fff" font-size="26" font-family="sans-serif" text-anchor="middle">${(t||'?').slice(0,2)}</text></svg>`);
 const BL='data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==';
-const im=(u,t,c='')=>`<img class="${c}" alt="" loading="lazy" decoding="async" src="${u||BL}" onerror="this.onerror=null;this.src='${BL}'">`;
+const im=(u,t,c='')=>`<img class="${c}" alt="" decoding="async" src="${u||BL}" onerror="this.onerror=null;this.src='${BL}'">`;
 const logo=c=>`<img src="LOGO.png" class="${c}" onerror="this.outerHTML='<b class=\\'tracking-[.3em]\\'>ROBLOX</b>'">`;
 const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 
@@ -162,7 +162,7 @@ function enter(u){S=u;lset('rbx_u',u);document.querySelectorAll('.pg.sub').forEa
  $('sb').innerHTML=`<div class="p-5 flex items-center gap-3 border-b border-gray-800 cursor-pointer" onclick="drawer(0);prof(S.id)">${im(null,S.name,'w-14 h-14 rounded-full object-cover" data-hs="'+S.id)}<div><b class="text-lg block">${esc(S.dn)}</b><span class="text-sm text-gray-400">@${esc(S.name)}</span></div></div>
  ${['Friends','Communities','Inventory','Trades','Messages','Roblox Plus','Buy Gift Cards','Redeem Codes','Settings','Help & Safety'].map((x,i)=>`<a class="px-5 py-3.5 flex items-center gap-4 font-bold text-gray-200 active:bg-white/5" onclick="drawer(0);sp('${x}')">${ic(['users','users','up','chat','mail','shield','gear','eye','gear','shield'][i],22)}${x}</a>`).join('')}
  <div class="p-4 flex flex-col gap-3"><button class="b b2" onclick="legal('Terms of Use')">Terms of Use</button><button class="b b2" onclick="legal('Privacy Policy')">Privacy Policy</button><button class="b b2" onclick="qs()">Quick Sign-in</button><button class="b b2" onclick="logout()">Switch Accounts</button><button class="b b2" onclick="logout()">Log Out</button></div>`;
- hyd($('sb'));hyd($('nav'));tab('home');loadMe();setTimeout(()=>NAV.forEach(([k])=>{const e=$('t-'+k);if(!e.dataset.r){e.dataset.r=1;T[k]()}}),400)}
+ hyd($('sb'));hyd($('nav'));tab('home');loadMe();NAV.forEach(([k])=>{const e=$('t-'+k);if(!e.dataset.r){e.dataset.r=1;T[k]()}});PRD=1}
 function logout(){localStorage.removeItem('rbx_u');location.reload()}
 const gcard=(x,c='')=>`<div class="card cursor-pointer ${c}" onpointerdown="g('/api/v1/games/${x.id}?include=icon,thumbnail')" onclick="game('${x.id}')"><div class="aspect-video rounded-lg overflow-hidden bg-[#1b1c1f]">${im(x.th||x.icon,x.name,'w-full h-full object-cover" '+(x.th?'':'data-gt="'+x.id+'"'))}</div><div class="font-semibold text-sm mt-1.5 truncate">${esc(x.name)}</div><div class="text-xs text-gray-400 flex items-center gap-1">${ic('up',12,'currentColor')}${x.r}${x.pl?' · '+fmt(x.pl)+' playing':''}</div></div>`;
 const bar=(l)=>`<header class="hd">${l}</header>`;
@@ -327,9 +327,13 @@ document.addEventListener('pointerdown',e=>{if(e.target.closest('.b,.nb,.card'))
 addEventListener('offline',()=>toast('You’re offline. Showing saved content.'));addEventListener('online',()=>toast('Back online'));
 document.addEventListener('visibilitychange',()=>{if(document.hidden&&E&&E.R&&!$('g3').classList.contains('hidden'))gmenu(1)});
 (async()=>{const d=await idb;d&&(d.transaction('c','readwrite').objectStore('c').openCursor().onsuccess=e=>{const c=e.target.result;if(c){if(Date.now()-(c.value?.t||0)>6048e5)c.delete();c.continue()}})})();
+let PRD=0;
+async function ready(){const t0=Date.now();await new Promise(r=>{const i=new Image();i.onload=i.onerror=r;i.src='RB.png'});try{await document.fonts.ready}catch(e){}let ok=0;
+ while(Date.now()-t0<12000){const bad=[...document.images].some(i=>!i.closest('#launch')&&!i.complete);ok=PRD&&!fl.size&&!bad?ok+1:0;if(ok>=4)break;await new Promise(r=>setTimeout(r,120))}
+ await Promise.all([...document.images].filter(i=>!i.closest('#launch')&&i.naturalWidth>1).map(i=>i.decode().catch(()=>{})))}
 (async function(){const t0=Date.now(),L=$('launch'),li=$('lim');try{navigator.serviceWorker&&navigator.serviceWorker.register('sw.js')}catch(e){}
  const cached=await dbGet('/api/v1/games/popular?limit=24');if(!navigator.onLine&&!cached&&!S){L.insertAdjacentHTML('beforeend','<div style="position:absolute;bottom:12%;left:0;right:0;text-align:center;color:#fff;font:600 15px Inter,sans-serif;text-shadow:0 2px 8px #000">No internet connection.<br>Closing Roblox…</div>');setTimeout(()=>{window.close();location.replace('about:blank')},3000);return}
- boot();S?enter(S):authUI();
- const done=()=>{L.style.pointerEvents='none';L.style.opacity=0;setTimeout(()=>L.remove(),650)},go=()=>setTimeout(done,Math.max(0,1700-(Date.now()-t0)));
- L.onclick=done;li?(li.complete?go():(li.onload=go,li.addEventListener('error',go))):go()})();
+ await boot();S?enter(S):(authUI(),PRD=1);
+ const done=()=>{L.style.pointerEvents='none';L.style.opacity=0;setTimeout(()=>L.remove(),650)};
+ await Promise.all([ready(),new Promise(r=>setTimeout(r,Math.max(0,1700-(Date.now()-t0)))),li&&!li.complete?new Promise(r=>{li.onload=li.onerror=r}):0]);done()})();
 </script></body></html>
